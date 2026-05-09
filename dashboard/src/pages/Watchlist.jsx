@@ -1,0 +1,179 @@
+import { startTransition, useEffect, useMemo, useState } from 'react';
+import BuyModal from '../components/BuyModal';
+import EmptyState from '../components/EmptyState';
+import StockSearch from '../components/StockSearch';
+import { useStockDetail } from '../context/StockDetailContext';
+import api from '../utils/api';
+import { formatINR } from '../utils/format';
+
+const WATCHLIST_KEY = 'tp_watchlist';
+
+function Watchlist() {
+  const { openStockDetail } = useStockDetail();
+  const [watchlist, setWatchlist] = useState([]);
+  const [selectedTrade, setSelectedTrade] = useState(null);
+  const [availableFunds, setAvailableFunds] = useState(0);
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem(WATCHLIST_KEY) || '[]');
+    setWatchlist(stored);
+
+    const fetchFunds = async () => {
+      try {
+        const { data } = await api.get('/funds');
+        setAvailableFunds(data.available);
+      } catch (error) {
+        setAvailableFunds(0);
+      }
+    };
+
+    fetchFunds();
+  }, []);
+
+  const persistWatchlist = (items) => {
+    localStorage.setItem(WATCHLIST_KEY, JSON.stringify(items));
+    setWatchlist(items);
+  };
+
+  const addToWatchlist = async (stock) => {
+    const exists = watchlist.some((item) => item.symbol === stock.symbol);
+
+    if (exists) {
+      return;
+    }
+
+    try {
+      const { data } = await api.get(`/stocks/quote/${stock.symbol}`);
+      startTransition(() => {
+        persistWatchlist([...watchlist, data.stock]);
+      });
+    } catch (error) {
+      persistWatchlist([...watchlist, stock]);
+    }
+  };
+
+  const removeFromWatchlist = (symbol) => {
+    persistWatchlist(watchlist.filter((item) => item.symbol !== symbol));
+  };
+
+  const refreshWatchlist = async () => {
+    const refreshed = await Promise.all(
+      watchlist.map(async (item) => {
+        try {
+          const { data } = await api.get(`/stocks/quote/${item.symbol}`);
+          return data.stock;
+        } catch (error) {
+          return item;
+        }
+      })
+    );
+
+    persistWatchlist(refreshed);
+  };
+
+  const sortedWatchlist = useMemo(
+    () => [...watchlist].sort((a, b) => a.symbol.localeCompare(b.symbol)),
+    [watchlist]
+  );
+
+  return (
+    <div className="page-stack">
+      <div className="panel-card">
+        <div className="panel-head">
+          <div style={{ marginBottom: '16px' }}>
+            <span className="section-label">Discover Stocks</span>
+            <h3>Your watchlist</h3>
+          </div>
+          <button className="button button-secondary" onClick={refreshWatchlist} type="button">
+            Refresh Quotes
+          </button>
+        </div>
+
+        <StockSearch onSelect={addToWatchlist} />
+      </div>
+
+      <section className="watchlist-grid">
+        {sortedWatchlist.length === 0 ? (
+          <div className="panel-card">
+            <EmptyState
+              title="No watchlist items yet"
+              description="Search by stock symbol or company name and add names to your watchlist."
+            />
+          </div>
+        ) : (
+          sortedWatchlist.map((stock) => (
+            <article
+              className="watchlist-card watchlist-clickable"
+              key={stock.symbol}
+              onClick={() => openStockDetail(stock)}
+            >
+              <div className="watchlist-head">
+                <div>
+                  <strong>{stock.symbol}</strong>
+                  <p>{stock.name}</p>
+                </div>
+                <span className="exchange-badge">{stock.exchange}</span>
+              </div>
+
+              <div className="watchlist-price">
+                <h3>{formatINR(stock.price)}</h3>
+                <span className={stock.change >= 0 ? 'text-success' : 'text-danger'}>
+                  {stock.change >= 0 ? '+' : ''}
+                  {stock.change.toFixed(2)}%
+                </span>
+              </div>
+
+              <div className="sparkline-placeholder">
+                <span />
+              </div>
+
+              <div className="watchlist-actions">
+                <button
+                  className="button button-primary"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setSelectedTrade({ stock, mode: 'buy' });
+                  }}
+                  type="button"
+                >
+                  Buy
+                </button>
+                <button
+                  className="button button-danger"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setSelectedTrade({ stock, mode: 'sell' });
+                  }}
+                  type="button"
+                >
+                  Sell
+                </button>
+                <button
+                  className="button button-ghost"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    removeFromWatchlist(stock.symbol);
+                  }}
+                  type="button"
+                >
+                  Remove
+                </button>
+              </div>
+            </article>
+          ))
+        )}
+      </section>
+
+      <BuyModal
+        open={Boolean(selectedTrade)}
+        stock={selectedTrade?.stock}
+        mode={selectedTrade?.mode}
+        onClose={() => setSelectedTrade(null)}
+        onSuccess={refreshWatchlist}
+        availableFunds={availableFunds}
+      />
+    </div>
+  );
+}
+
+export default Watchlist;
