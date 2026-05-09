@@ -9,7 +9,8 @@
     "dev": "nodemon index.js",
     "start": "node index.js",
     "seed": "node seed/seedData.js",
-    "validate": "node --check index.js"
+    "validate": "node --check index.js",
+    "test": "node --test --experimental-test-isolation=none tests/*.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
