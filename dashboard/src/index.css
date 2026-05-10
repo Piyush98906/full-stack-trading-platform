@@ -1068,6 +1068,17 @@ select:focus {
   flex-direction: row !important;
   align-items: center;
 }
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
 
 .form-error {
   background: #fff1f2;
