@@ -5,9 +5,11 @@ import { useAuth } from '../context/AuthContext';
 function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
   const [form, setForm] = useState({
     name: '',
     email: '',
+    pan: '',
     password: '',
     confirmPassword: '',
     agree: false
@@ -35,6 +37,11 @@ function Register() {
       return;
     }
 
+    if (!panPattern.test(form.pan)) {
+      setError('Enter a valid PAN number in the format ABCDE1234F');
+      return;
+    }
+
     if (!form.agree) {
       setError('Please accept the terms to continue');
       return;
@@ -46,6 +53,7 @@ function Register() {
       await register({
         name: form.name,
         email: form.email,
+        pan: form.pan,
         password: form.password
       });
       navigate('/dashboard');
@@ -96,6 +104,19 @@ function Register() {
               value={form.email}
               onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
               placeholder="you@example.com"
+            />
+          </label>
+
+          <label>
+            PAN Number
+            <input
+              type="text"
+              value={form.pan}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, pan: event.target.value.toUpperCase() }))
+              }
+              placeholder="ABCDE1234F"
+              maxLength={10}
             />
           </label>
 

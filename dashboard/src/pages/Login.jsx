@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 function Login() {
   const navigate = useNavigate();
   const { login, user } = useAuth();
-  const [form, setForm] = useState({ email: 'demo@tradingplatform.in', password: 'Demo@123' });
+  const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -68,13 +68,7 @@ function Login() {
         <form className="auth-form" onSubmit={handleSubmit}>
           <span className="section-label">Welcome back</span>
           <h2>Sign in to your dashboard</h2>
-          <p className="auth-copy">Use the demo account below or sign in with your own profile.</p>
-
-          <div className="demo-box">
-            <strong>Demo credentials</strong>
-            <span>Email: demo@tradingplatform.in</span>
-            <span>Password: Demo@123</span>
-          </div>
+          <p className="auth-copy">Sign in with your registered profile to access your dashboard.</p>
 
           <label>
             Email

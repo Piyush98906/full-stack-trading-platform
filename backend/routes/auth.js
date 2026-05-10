@@ -5,6 +5,7 @@ const { protect } = require('../middleware/auth');
 const { getUpstoxStatus } = require('../services/upstoxData');
 
 const router = express.Router();
+const panPattern = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
 const generateToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -23,10 +24,15 @@ const sanitizeUser = (user) => ({
 
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, pan } = req.body;
+    const normalizedPan = String(pan || '').trim().toUpperCase();
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email, and password are required' });
+    if (!name || !email || !password || !normalizedPan) {
+      return res.status(400).json({ message: 'Name, email, PAN number, and password are required' });
+    }
+
+    if (!panPattern.test(normalizedPan)) {
+      return res.status(400).json({ message: 'PAN number must be in the format ABCDE1234F' });
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -37,6 +43,7 @@ router.post('/register', async (req, res) => {
     const user = await User.create({
       name,
       email: email.toLowerCase(),
+      pan: normalizedPan,
       password,
       avatar: name.trim().charAt(0).toUpperCase()
     });
