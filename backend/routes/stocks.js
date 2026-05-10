@@ -1,7 +1,15 @@
 const express = require('express');
-const { STOCKS, getStockBySymbol, buildStockDetails } = require('../data/stocks');
+const { STOCKS } = require('../data/stocks');
 const { protect } = require('../middleware/auth');
-const { enrichStocksWithLiveQuotes, getLiveQuoteForStock, mergeQuoteIntoStock } = require('../services/marketData');
+const {
+  buildStockDetailsPayload,
+  enrichStocksWithLiveQuotes,
+  getLiveQuoteForStock,
+  getMarketDataStatus,
+  mergeQuoteIntoStock,
+  resolveStockInput,
+  searchStocks
+} = require('../services/marketData');
 
 const router = express.Router();
 
@@ -10,24 +18,22 @@ router.get('/search', protect, async (req, res) => {
     const query = String(req.query.q || '').trim().toLowerCase();
 
     if (!query) {
-      return res.json({ stocks: await enrichStocksWithLiveQuotes(STOCKS.slice(0, 12)) });
+      return res.json({ stocks: await enrichStocksWithLiveQuotes(STOCKS.slice(0, 12), { allowSearch: true }) });
     }
 
-    const stocks = STOCKS.filter(
-      (stock) =>
-        stock.symbol.toLowerCase().includes(query) ||
-        stock.name.toLowerCase().includes(query)
-    ).slice(0, 12);
-
-    return res.json({ stocks: await enrichStocksWithLiveQuotes(stocks) });
+    return res.json({ stocks: await searchStocks(query) });
   } catch (error) {
     return res.status(500).json({ message: 'Failed to search stocks' });
   }
 });
 
+router.get('/provider-status', protect, (req, res) => {
+  return res.json(getMarketDataStatus());
+});
+
 router.get('/market-overview', protect, async (req, res) => {
   try {
-    const liveStocks = await enrichStocksWithLiveQuotes(STOCKS);
+    const liveStocks = await enrichStocksWithLiveQuotes(STOCKS, { allowSearch: false });
     const equities = liveStocks.filter((stock) => stock.sector !== 'Index');
     const rankedByGain = [...equities].sort((a, b) => b.change - a.change);
     const rankedByLoss = [...equities].sort((a, b) => a.change - b.change);
@@ -51,13 +57,19 @@ router.get('/market-overview', protect, async (req, res) => {
 
 router.get('/quote/:symbol', protect, async (req, res) => {
   try {
-    const stock = getStockBySymbol(req.params.symbol);
+    const stock = await resolveStockInput({
+      symbol: req.params.symbol,
+      instrumentKey: req.query.instrumentKey,
+      exchange: req.query.exchange,
+      name: req.query.name,
+      sector: req.query.sector
+    });
 
     if (!stock) {
       return res.status(404).json({ message: 'Stock not found' });
     }
 
-    const liveQuote = await getLiveQuoteForStock(stock);
+    const liveQuote = await getLiveQuoteForStock(stock, { allowSearch: false });
 
     return res.json({
       stock: mergeQuoteIntoStock(stock, liveQuote)
@@ -69,24 +81,16 @@ router.get('/quote/:symbol', protect, async (req, res) => {
 
 router.get('/details/:symbol', protect, async (req, res) => {
   try {
-    const details = buildStockDetails(req.params.symbol);
+    const details = await buildStockDetailsPayload({
+      symbol: req.params.symbol,
+      instrumentKey: req.query.instrumentKey,
+      exchange: req.query.exchange,
+      name: req.query.name,
+      sector: req.query.sector
+    });
 
     if (!details) {
       return res.status(404).json({ message: 'Stock not found' });
-    }
-
-    const liveQuote = await getLiveQuoteForStock(details.stock);
-    details.stock = mergeQuoteIntoStock(details.stock, liveQuote);
-
-    if (liveQuote) {
-      details.stats = {
-        ...details.stats,
-        lowerCircuit: liveQuote.lowerCircuitLimit || details.stats.lowerCircuit,
-        previousClose: liveQuote.previousClose || details.stats.previousClose,
-        todayHigh: liveQuote.high || details.stats.todayHigh,
-        todayLow: liveQuote.low || details.stats.todayLow,
-        upperCircuit: liveQuote.upperCircuitLimit || details.stats.upperCircuit
-      };
     }
 
     return res.json(details);

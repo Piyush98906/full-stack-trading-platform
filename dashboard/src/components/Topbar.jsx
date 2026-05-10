@@ -99,7 +99,7 @@ function Topbar({ onMenuClick }) {
                 results.map((stock) => (
                   <button
                     className="search-item search-button"
-                    key={stock.symbol}
+                    key={stock.instrumentKey || `${stock.symbol}-${stock.exchange}`}
                     onClick={() => handleResultClick(stock)}
                     type="button"
                   >

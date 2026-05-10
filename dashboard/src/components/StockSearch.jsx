@@ -70,7 +70,7 @@ function StockSearch({ onSelect }) {
             results.map((stock) => (
               <button
                 className="search-item search-button"
-                key={stock.symbol}
+                key={stock.instrumentKey || `${stock.symbol}-${stock.exchange}`}
                 onClick={() => handleSelect(stock)}
                 type="button"
               >

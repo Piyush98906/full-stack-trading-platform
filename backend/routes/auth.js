@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const { getUpstoxStatus } = require('../services/upstoxData');
 
 const router = express.Router();
 
@@ -82,6 +83,10 @@ router.post('/login', async (req, res) => {
 
 router.get('/me', protect, async (req, res) => {
   return res.json({ user: req.user });
+});
+
+router.get('/upstox/status', (req, res) => {
+  return res.json(getUpstoxStatus());
 });
 
 module.exports = router;

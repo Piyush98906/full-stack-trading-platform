@@ -7,6 +7,7 @@ import api from '../utils/api';
 import { formatINR } from '../utils/format';
 
 const WATCHLIST_KEY = 'tp_watchlist';
+const getWatchlistKey = (item) => item.instrumentKey || `${item.symbol}-${item.exchange}`;
 
 function Watchlist() {
   const { openStockDetail } = useStockDetail();
@@ -36,14 +37,22 @@ function Watchlist() {
   };
 
   const addToWatchlist = async (stock) => {
-    const exists = watchlist.some((item) => item.symbol === stock.symbol);
+    const stockKey = getWatchlistKey(stock);
+    const exists = watchlist.some((item) => getWatchlistKey(item) === stockKey);
 
     if (exists) {
       return;
     }
 
     try {
-      const { data } = await api.get(`/stocks/quote/${stock.symbol}`);
+      const { data } = await api.get(`/stocks/quote/${encodeURIComponent(stock.symbol)}`, {
+        params: {
+          instrumentKey: stock.instrumentKey,
+          exchange: stock.exchange,
+          name: stock.name,
+          sector: stock.sector
+        }
+      });
       startTransition(() => {
         persistWatchlist([...watchlist, data.stock]);
       });
@@ -52,15 +61,22 @@ function Watchlist() {
     }
   };
 
-  const removeFromWatchlist = (symbol) => {
-    persistWatchlist(watchlist.filter((item) => item.symbol !== symbol));
+  const removeFromWatchlist = (stockToRemove) => {
+    persistWatchlist(watchlist.filter((item) => getWatchlistKey(item) !== getWatchlistKey(stockToRemove)));
   };
 
   const refreshWatchlist = async () => {
     const refreshed = await Promise.all(
       watchlist.map(async (item) => {
         try {
-          const { data } = await api.get(`/stocks/quote/${item.symbol}`);
+          const { data } = await api.get(`/stocks/quote/${encodeURIComponent(item.symbol)}`, {
+            params: {
+              instrumentKey: item.instrumentKey,
+              exchange: item.exchange,
+              name: item.name,
+              sector: item.sector
+            }
+          });
           return data.stock;
         } catch (error) {
           return item;
@@ -104,7 +120,7 @@ function Watchlist() {
           sortedWatchlist.map((stock) => (
             <article
               className="watchlist-card watchlist-clickable"
-              key={stock.symbol}
+              key={getWatchlistKey(stock)}
               onClick={() => openStockDetail(stock)}
             >
               <div className="watchlist-head">
@@ -152,7 +168,7 @@ function Watchlist() {
                   className="button button-ghost"
                   onClick={(event) => {
                     event.stopPropagation();
-                    removeFromWatchlist(stock.symbol);
+                    removeFromWatchlist(stock);
                   }}
                   type="button"
                 >

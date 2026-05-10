@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import api from '../utils/api';
 import { formatCompact, formatINR } from '../utils/format';
 import { useStockDetail } from '../context/StockDetailContext';
@@ -10,7 +10,7 @@ import LoadingSpinner from './LoadingSpinner';
 const ranges = ['1D', '3D', '5D', '1W', '1M', '6M'];
 
 function StockDetailModal() {
-  const { selectedSymbol, closeStockDetail } = useStockDetail();
+  const { selectedStock, closeStockDetail } = useStockDetail();
   const [loading, setLoading] = useState(false);
   const [details, setDetails] = useState(null);
   const [error, setError] = useState('');
@@ -18,12 +18,30 @@ function StockDetailModal() {
   const [availableFunds, setAvailableFunds] = useState(0);
   const [tradeMode, setTradeMode] = useState('');
 
-  const fetchDetails = async (symbol) => {
+  const fetchDetails = async (stock) => {
     try {
       setLoading(true);
       setError('');
+      const params = {};
+
+      if (stock?.instrumentKey) {
+        params.instrumentKey = stock.instrumentKey;
+      }
+
+      if (stock?.exchange) {
+        params.exchange = stock.exchange;
+      }
+
+      if (stock?.name) {
+        params.name = stock.name;
+      }
+
+      if (stock?.sector) {
+        params.sector = stock.sector;
+      }
+
       const [detailsResponse, fundsResponse] = await Promise.all([
-        api.get(`/stocks/details/${symbol}`),
+        api.get(`/stocks/details/${encodeURIComponent(stock.symbol)}`, { params }),
         api.get('/funds')
       ]);
       setDetails(detailsResponse.data);
@@ -37,7 +55,7 @@ function StockDetailModal() {
   };
 
   useEffect(() => {
-    if (!selectedSymbol) {
+    if (!selectedStock?.symbol) {
       setDetails(null);
       setError('');
       setActiveRange('1D');
@@ -45,8 +63,8 @@ function StockDetailModal() {
       return;
     }
 
-    fetchDetails(selectedSymbol);
-  }, [selectedSymbol]);
+    fetchDetails(selectedStock);
+  }, [selectedStock]);
 
   const activeSeries = details?.performance?.[activeRange];
   const candleSeries = activeSeries?.candles || [];
@@ -102,7 +120,7 @@ function StockDetailModal() {
     };
   }, [candleSeries, details, activeSeries?.change]);
 
-  if (!selectedSymbol) {
+  if (!selectedStock?.symbol) {
     return null;
   }
 
@@ -114,7 +132,7 @@ function StockDetailModal() {
             <div>
               <span className="section-label">Stock Snapshot</span>
               <h2>
-                {selectedSymbol}
+                {selectedStock.symbol}
                 {details?.stock ? <span className="text-muted"> · {details.stock.exchange}</span> : null}
               </h2>
               {details?.company ? <p className="stock-subtitle">{details.company.companyName}</p> : null}
@@ -211,7 +229,7 @@ function StockDetailModal() {
                   </div>
                   <div style={{ flex: 1, position: 'relative', minHeight: '320px' }}>
                     <Line
-                      key={`${selectedSymbol}-${activeRange}`}
+                      key={`${selectedStock.symbol}-${activeRange}`}
                       data={chartData}
                       redraw
                       options={{
@@ -323,7 +341,7 @@ function StockDetailModal() {
         stock={details?.stock}
         mode={tradeMode || 'buy'}
         onClose={() => setTradeMode('')}
-        onSuccess={() => fetchDetails(selectedSymbol)}
+        onSuccess={() => fetchDetails(details?.stock || selectedStock)}
         availableFunds={availableFunds}
       />
     </>

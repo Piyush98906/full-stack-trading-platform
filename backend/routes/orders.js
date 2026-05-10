@@ -3,9 +3,8 @@ const Holding = require('../models/Holding');
 const Order = require('../models/Order');
 const Position = require('../models/Position');
 const User = require('../models/User');
-const { getStockBySymbol } = require('../data/stocks');
 const { protect } = require('../middleware/auth');
-const { getLiveQuoteForStock } = require('../services/marketData');
+const { getLiveQuoteForStock, resolveStockInput } = require('../services/marketData');
 
 const router = express.Router();
 
@@ -184,14 +183,31 @@ router.get('/', protect, async (req, res) => {
 
 router.post('/new', protect, async (req, res) => {
   try {
-    const { name, qty, price, mode, orderType = 'market', product = 'CNC' } = req.body;
+    const {
+      name,
+      qty,
+      price,
+      mode,
+      orderType = 'market',
+      product = 'CNC',
+      instrumentKey,
+      exchange,
+      companyName,
+      sector
+    } = req.body;
 
     if (!name || !qty || !mode) {
       return res.status(400).json({ message: 'Name, quantity, and mode are required' });
     }
 
     const normalizedQty = Number(qty);
-    const stock = getStockBySymbol(name);
+    const stock = await resolveStockInput({
+      symbol: name,
+      instrumentKey,
+      exchange,
+      name: companyName,
+      sector
+    });
 
     if (!stock) {
       return res.status(404).json({ message: 'Stock not found' });

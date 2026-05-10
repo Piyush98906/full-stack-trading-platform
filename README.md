@@ -42,7 +42,8 @@ npm run dev
 - `CLIENT_URL`: deployed marketing site URL
 - `DASHBOARD_URL`: deployed dashboard URL
 - `ALLOWED_ORIGINS`: optional comma-separated extra origins such as preview URLs
-- `MARKET_DATA_API_BASE_URL`: optional override for the Indian market data API base URL
+- `UPSTOX_ANALYTICS_TOKEN`: optional read-only market-data token for quotes, search, and charts
+- `UPSTOX_ACCESS_TOKEN`: optional standard Upstox access token if you already have one
 
 ### Frontend
 
@@ -53,17 +54,27 @@ npm run dev
 - `VITE_API_URL`: deployed API base URL, for example `https://your-api-domain.com/api`
 - `VITE_FRONTEND_URL`: deployed marketing site URL
 
-## Optional live market data
+## Market data mode
 
-The app uses the built-in stock dataset as a safe fallback. It can also fetch live Indian market quotes through the public API exposed by this project:
+The app always has the seeded stock dataset as a fallback, but it now supports Upstox for:
 
-- `https://github.com/0xramm/Indian-Stock-Market-API`
+- broader stock search beyond the local seed list
+- real-time quote refresh
+- live chart candles for the stock detail modal
+- quote-backed order ticket pricing for external stocks too
 
-By default the backend calls:
+If no Upstox token is configured, the app falls back automatically to seeded prices and generated chart data.
 
-- `https://nse-api-ruby.vercel.app`
+### Recommended setup
 
-If that service is unavailable, the app automatically falls back to the local seeded prices so the platform still works.
+For market-data-only usage, set `UPSTOX_ANALYTICS_TOKEN` in `backend/.env`. That is the simplest option and is enough for search, quotes, and charts.
+
+If you already have a standard Upstox market-data token, you can use `UPSTOX_ACCESS_TOKEN` instead.
+
+The backend also exposes:
+
+- `GET /api/auth/upstox/status`
+- `GET /api/stocks/provider-status`
 
 ## Build and deployment checks
 

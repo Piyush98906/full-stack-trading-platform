@@ -204,13 +204,7 @@ const buildCompanyProfile = (stock) => {
   };
 };
 
-const buildStockDetails = (symbol) => {
-  const stock = getStockBySymbol(symbol);
-
-  if (!stock) {
-    return null;
-  }
-
+const buildStockDetailsFromStock = (stock) => {
   const performance = buildPerformance(stock);
   const yearTrack = performance['6M'].points.concat(
     performance['1M'].points.map((point, index) => ({
@@ -240,4 +234,14 @@ const buildStockDetails = (symbol) => {
   };
 };
 
-module.exports = { STOCKS, getStockBySymbol, buildStockDetails };
+const buildStockDetails = (symbol) => {
+  const stock = getStockBySymbol(symbol);
+
+  if (!stock) {
+    return null;
+  }
+
+  return buildStockDetailsFromStock(stock);
+};
+
+module.exports = { STOCKS, getStockBySymbol, buildStockDetails, buildStockDetailsFromStock };

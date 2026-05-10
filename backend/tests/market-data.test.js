@@ -1,19 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { getProviderSymbol, mergeQuoteIntoStock, toQuote } = require('../services/marketData');
-
-test('getProviderSymbol appends NSE suffix by default', () => {
-  assert.equal(getProviderSymbol({ symbol: 'RELIANCE', exchange: 'NSE' }), 'RELIANCE.NS');
-});
-
-test('getProviderSymbol appends BSE suffix for BSE symbols', () => {
-  assert.equal(getProviderSymbol({ symbol: 'SENSEX', exchange: 'BSE' }), 'SENSEX.BO');
-});
-
-test('getProviderSymbol preserves explicit provider suffixes', () => {
-  assert.equal(getProviderSymbol('ITC.NS'), 'ITC.NS');
-  assert.equal(getProviderSymbol('ITC.BO'), 'ITC.BO');
-});
+const {
+  enrichStocksWithLiveQuotes,
+  getLiveQuoteForStock,
+  mergeQuoteIntoStock
+} = require('../services/marketData');
 
 test('mergeQuoteIntoStock keeps original stock when no live quote exists', () => {
   const stock = { symbol: 'INFY', price: 1510, change: 1.23 };
@@ -28,42 +19,35 @@ test('mergeQuoteIntoStock overlays live price and percent change', () => {
   assert.deepEqual(mergeQuoteIntoStock(stock, quote), {
     symbol: 'INFY',
     price: 1526.5,
-    change: 2.04
+    change: 2.04,
+    instrumentKey: ''
   });
 });
 
-test('toQuote normalizes provider response into internal quote shape', () => {
-  const quote = toQuote({
-    change: 10.2,
-    day_high: 1520.4,
-    day_low: 1490.1,
-    last_price: 1512.35,
-    market_cap: 6100000000,
-    open: 1501.2,
-    pe_ratio: 22.4,
-    percent_change: 0.68,
-    previous_close: 1502.15,
-    sector: 'IT',
-    symbol: 'INFY',
-    volume: 8200000,
-    year_high: 1900,
-    year_low: 1300
-  });
+test('enrichStocksWithLiveQuotes falls back to the seeded stock dataset when Upstox is unavailable', async () => {
+  const stocks = [
+    { symbol: 'INFY', price: 1510, change: 1.23 },
+    { symbol: 'TCS', price: 3890, change: -0.48 }
+  ];
 
-  assert.deepEqual(quote, {
-    changeAbsolute: 10.2,
-    changePercent: 0.68,
-    high: 1520.4,
-    lastPrice: 1512.35,
-    low: 1490.1,
-    marketCap: 6100000000,
-    open: 1501.2,
-    peRatio: 22.4,
-    previousClose: 1502.15,
-    sector: 'IT',
-    symbol: 'INFY',
-    volume: 8200000,
-    week52High: 1900,
-    week52Low: 1300
-  });
+  const enrichedStocks = await enrichStocksWithLiveQuotes(stocks);
+
+  assert.equal(enrichedStocks.length, 2);
+  assert.equal(enrichedStocks[0].symbol, 'INFY');
+  assert.equal(enrichedStocks[0].price, 1510);
+  assert.equal(enrichedStocks[0].change, 1.23);
+  assert.equal(enrichedStocks[0].source, 'seeded');
+
+  assert.equal(enrichedStocks[1].symbol, 'TCS');
+  assert.equal(enrichedStocks[1].price, 3490.6);
+  assert.equal(enrichedStocks[1].change, 0.84);
+  assert.equal(enrichedStocks[1].source, 'seeded');
+  assert.notEqual(enrichedStocks[0], stocks[0]);
+  assert.notEqual(enrichedStocks[1], stocks[1]);
+});
+
+test('getLiveQuoteForStock returns null while seeded market data mode is active', async () => {
+  const liveQuote = await getLiveQuoteForStock({ symbol: 'INFY', price: 1510, change: 1.23 });
+
+  assert.equal(liveQuote, null);
 });

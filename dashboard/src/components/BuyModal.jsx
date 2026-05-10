@@ -25,7 +25,14 @@ function BuyModal({ open, stock, mode: initialMode = 'buy', onClose, onSuccess, 
 
     const fetchQuote = async () => {
       try {
-        const { data } = await api.get(`/stocks/quote/${stock.symbol}`);
+        const { data } = await api.get(`/stocks/quote/${encodeURIComponent(stock.symbol)}`, {
+          params: {
+            instrumentKey: stock.instrumentKey,
+            exchange: stock.exchange,
+            name: stock.name,
+            sector: stock.sector
+          }
+        });
         setPrice(data.stock.price);
       } catch (error) {
         setPrice(stock.price || 0);
@@ -48,6 +55,10 @@ function BuyModal({ open, stock, mode: initialMode = 'buy', onClose, onSuccess, 
       setSubmitting(true);
       const { data } = await api.post('/orders/new', {
         name: stock.symbol,
+        companyName: stock.name,
+        exchange: stock.exchange,
+        instrumentKey: stock.instrumentKey,
+        sector: stock.sector,
         qty: Number(qty),
         price: Number(price),
         mode,

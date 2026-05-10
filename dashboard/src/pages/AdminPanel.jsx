@@ -15,18 +15,6 @@ function AdminPanel() {
   const [positions, setPositions] = useState([]);
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('orders');
-  const [holdingDraft, setHoldingDraft] = useState({
-    userId: '',
-    name: '',
-    qty: '',
-    avg: '',
-    price: '',
-    net: '+0.00%',
-    day: '+0.00%',
-    isLoss: false,
-    sector: 'IT',
-    exchange: 'NSE'
-  });
 
   const fetchAdminData = async () => {
     try {
@@ -45,9 +33,6 @@ function AdminPanel() {
       setHoldings(holdingsResponse.data.holdings);
       setPositions(positionsResponse.data.positions);
       setUsers(usersResponse.data.users);
-      if (!holdingDraft.userId && usersResponse.data.users[0]) {
-        setHoldingDraft((current) => ({ ...current, userId: usersResponse.data.users[0]._id }));
-      }
     } finally {
       setLoading(false);
     }
@@ -56,31 +41,6 @@ function AdminPanel() {
   useEffect(() => {
     fetchAdminData();
   }, []);
-
-  const createHolding = async () => {
-    try {
-      await api.post('/admin/holdings', {
-        ...holdingDraft,
-        qty: Number(holdingDraft.qty),
-        avg: Number(holdingDraft.avg),
-        price: Number(holdingDraft.price),
-        isLoss: String(holdingDraft.net).startsWith('-')
-      });
-      addToast('Holding created successfully', 'success');
-      setHoldingDraft((current) => ({
-        ...current,
-        name: '',
-        qty: '',
-        avg: '',
-        price: '',
-        net: '+0.00%',
-        day: '+0.00%'
-      }));
-      fetchAdminData();
-    } catch (error) {
-      addToast(error.response?.data?.message || 'Failed to create holding', 'error');
-    }
-  };
 
   if (loading) {
     return <LoadingSpinner label="Loading admin data..." />;
@@ -168,60 +128,6 @@ function AdminPanel() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>
-                    <select
-                      value={holdingDraft.userId}
-                      onChange={(event) =>
-                        setHoldingDraft((current) => ({ ...current, userId: event.target.value }))
-                      }
-                    >
-                      {users.map((item) => (
-                        <option key={item._id} value={item._id}>
-                          {item.email}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <input
-                      value={holdingDraft.name}
-                      onChange={(event) => setHoldingDraft((current) => ({ ...current, name: event.target.value.toUpperCase() }))}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      value={holdingDraft.qty}
-                      onChange={(event) => setHoldingDraft((current) => ({ ...current, qty: event.target.value }))}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      value={holdingDraft.avg}
-                      onChange={(event) => setHoldingDraft((current) => ({ ...current, avg: event.target.value }))}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      value={holdingDraft.price}
-                      onChange={(event) => setHoldingDraft((current) => ({ ...current, price: event.target.value }))}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      value={holdingDraft.sector}
-                      onChange={(event) => setHoldingDraft((current) => ({ ...current, sector: event.target.value }))}
-                    />
-                  </td>
-                  <td>
-                    <button className="button button-primary" onClick={createHolding} type="button">
-                      Add Holding
-                    </button>
-                  </td>
-                </tr>
                 {holdings.map((holding) => (
                   <tr key={holding._id}>
                     <td>{holding.userId?.email}</td>

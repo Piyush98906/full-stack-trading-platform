@@ -3,28 +3,34 @@ import { createContext, useContext, useMemo, useState } from 'react';
 const StockDetailContext = createContext(null);
 
 export function StockDetailProvider({ children }) {
-  const [selectedSymbol, setSelectedSymbol] = useState('');
+  const [selectedStock, setSelectedStock] = useState(null);
 
   const openStockDetail = (input) => {
-    const symbol = typeof input === 'string' ? input : input?.symbol;
-    if (!symbol) {
+    const stock =
+      typeof input === 'string'
+        ? { symbol: input }
+        : input?.symbol
+          ? { ...input }
+          : null;
+
+    if (!stock?.symbol) {
       return;
     }
 
-    setSelectedSymbol(symbol);
+    setSelectedStock(stock);
   };
 
   const closeStockDetail = () => {
-    setSelectedSymbol('');
+    setSelectedStock(null);
   };
 
   const value = useMemo(
     () => ({
-      selectedSymbol,
+      selectedStock,
       openStockDetail,
       closeStockDetail
     }),
-    [selectedSymbol]
+    [selectedStock]
   );
 
   return <StockDetailContext.Provider value={value}>{children}</StockDetailContext.Provider>;

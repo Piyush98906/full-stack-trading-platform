@@ -1,7 +1,16 @@
-const MARKET_DATA_API_BASE_URL =
-  String(process.env.MARKET_DATA_API_BASE_URL || 'https://nse-api-ruby.vercel.app').replace(/\/+$/, '');
+const { STOCKS, buildStockDetailsFromStock, getStockBySymbol } = require('../data/stocks');
+const {
+  cacheInstrument,
+  getCachedInstrument,
+  getUpstoxQuotes,
+  getUpstoxSeriesForRange,
+  getUpstoxStatus,
+  isUpstoxReady,
+  searchUpstoxInstruments
+} = require('./upstoxData');
 
 const warningCache = new Set();
+const chartRanges = ['1D', '3D', '5D', '1W', '1M', '6M'];
 
 const warnOnce = (key, message) => {
   if (warningCache.has(key)) {
@@ -12,121 +21,268 @@ const warnOnce = (key, message) => {
   console.warn(message);
 };
 
-const getProviderSymbol = (stock) => {
-  const symbol = typeof stock === 'string' ? stock : stock.symbol;
-  const exchange = typeof stock === 'string' ? 'NSE' : stock.exchange;
+const normalizeSymbol = (value) => String(value || '').trim().toUpperCase();
 
-  if (String(symbol).includes('.NS') || String(symbol).includes('.BO')) {
-    return symbol;
+const normalizeExchange = (value) => String(value || 'NSE').trim().toUpperCase();
+
+const cloneStock = (stock) => ({ ...stock });
+
+const createExternalStock = (input = {}) => ({
+  symbol: normalizeSymbol(input.symbol),
+  name: input.name || normalizeSymbol(input.symbol),
+  exchange: normalizeExchange(input.exchange),
+  sector: input.sector || 'Equity',
+  price: Number(input.price || 0),
+  change: Number(input.change || 0),
+  instrumentKey: input.instrumentKey || '',
+  instrumentType: input.instrumentType || '',
+  segment: input.segment || '',
+  source: input.source || 'upstox'
+});
+
+const mergeStockMetadata = (baseStock, overlay = {}) => ({
+  ...baseStock,
+  ...overlay,
+  symbol: overlay.symbol || baseStock.symbol,
+  name: baseStock.name || overlay.name || baseStock.symbol,
+  exchange: overlay.exchange || baseStock.exchange || 'NSE',
+  sector: baseStock.sector || overlay.sector || 'Equity',
+  price: Number(overlay.price ?? baseStock.price ?? 0),
+  change: Number(overlay.change ?? baseStock.change ?? 0),
+  instrumentKey: overlay.instrumentKey || baseStock.instrumentKey || '',
+  instrumentType: overlay.instrumentType || baseStock.instrumentType || '',
+  segment: overlay.segment || baseStock.segment || '',
+  source: overlay.source || baseStock.source || 'seeded'
+});
+
+const getBaseStock = (input = {}) => {
+  const localStock = getStockBySymbol(input.symbol);
+
+  if (localStock) {
+    return mergeStockMetadata(cloneStock(localStock), input.instrumentKey ? { instrumentKey: input.instrumentKey } : {});
   }
 
-  return exchange === 'BSE' ? `${symbol}.BO` : `${symbol}.NS`;
-};
-
-const fetchJson = async (url) => {
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'application/json'
-    }
-  });
-
-  const data = await response.json();
-
-  if (!response.ok || data?.status === 'error') {
-    const message = data?.message || `Market data request failed with ${response.status}`;
-    throw new Error(message);
-  }
-
-  return data;
-};
-
-const toQuote = (providerStock) => {
-  if (!providerStock) {
+  if (!input.symbol) {
     return null;
   }
 
-  return {
-    changeAbsolute: Number(providerStock.change || 0),
-    changePercent: Number(providerStock.percent_change || 0),
-    high: Number(providerStock.day_high || 0),
-    lastPrice: Number(providerStock.last_price || 0),
-    low: Number(providerStock.day_low || 0),
-    marketCap: Number(providerStock.market_cap || 0),
-    open: Number(providerStock.open || 0),
-    peRatio: Number(providerStock.pe_ratio || 0),
-    previousClose: Number(providerStock.previous_close || 0),
-    sector: providerStock.sector || '',
-    symbol: providerStock.symbol || '',
-    volume: Number(providerStock.volume || 0),
-    week52High: Number(providerStock.year_high || 0),
-    week52Low: Number(providerStock.year_low || 0)
-  };
+  return createExternalStock(input);
+};
+
+const scoreInstrumentMatch = (instrument, target) => {
+  const targetSymbol = normalizeSymbol(target.symbol);
+  const targetExchange = normalizeExchange(target.exchange);
+  const targetName = String(target.name || '').trim().toLowerCase();
+
+  let score = 0;
+
+  if (normalizeSymbol(instrument.symbol) === targetSymbol) {
+    score += 50;
+  }
+
+  if (normalizeExchange(instrument.exchange) === targetExchange) {
+    score += 20;
+  }
+
+  if (targetName && String(instrument.name || '').toLowerCase() === targetName) {
+    score += 15;
+  }
+
+  if (targetName && String(instrument.name || '').toLowerCase().includes(targetName)) {
+    score += 5;
+  }
+
+  if (instrument.sector === 'Index' && target.sector === 'Index') {
+    score += 5;
+  }
+
+  return score;
+};
+
+const pickBestInstrument = (matches, target) =>
+  [...matches].sort((left, right) => scoreInstrumentMatch(right, target) - scoreInstrumentMatch(left, target))[0] || null;
+
+const resolveInstrumentForStock = async (stock, { allowSearch = true } = {}) => {
+  if (!stock) {
+    return null;
+  }
+
+  if (stock.instrumentKey) {
+    cacheInstrument(stock);
+    return stock;
+  }
+
+  const cached = getCachedInstrument(stock);
+
+  if (cached) {
+    return mergeStockMetadata(stock, cached);
+  }
+
+  if (!allowSearch || !isUpstoxReady()) {
+    return stock;
+  }
+
+  const searchQuery = stock.symbol || stock.name;
+  const results = await searchUpstoxInstruments(searchQuery, { records: 10 });
+  const bestMatch = pickBestInstrument(results, stock);
+
+  return bestMatch ? mergeStockMetadata(stock, bestMatch) : stock;
+};
+
+const resolveStockInput = async (input = {}, options = {}) => {
+  const baseStock = getBaseStock(input);
+
+  if (!baseStock) {
+    return null;
+  }
+
+  return resolveInstrumentForStock(baseStock, options);
 };
 
 const mergeQuoteIntoStock = (stock, quote) => {
   if (!quote || !quote.lastPrice) {
-    return stock;
+    return cloneStock(stock);
   }
 
   return {
     ...stock,
-    change: quote.changePercent,
-    price: quote.lastPrice
+    change: Number(quote.changePercent ?? stock.change ?? 0),
+    price: Number(quote.lastPrice ?? stock.price ?? 0),
+    instrumentKey: quote.instrumentKey || stock.instrumentKey || ''
   };
 };
 
-const getLiveQuotesForStocks = async (stocks) => {
-  const quotesBySymbol = new Map();
+const getLiveQuoteForStock = async (stock, { allowSearch = true } = {}) => {
+  const resolvedStock = await resolveStockInput(stock, { allowSearch });
 
-  if (!Array.isArray(stocks) || stocks.length === 0) {
-    return quotesBySymbol;
-  }
-
-  const providerSymbols = stocks.map((stock) => getProviderSymbol(stock));
-  const params = new URLSearchParams({
-    res: 'num',
-    symbols: providerSymbols.join(',')
-  });
-
-  try {
-    const data = await fetchJson(`${MARKET_DATA_API_BASE_URL}/stock/list?${params.toString()}`);
-
-    for (const providerStock of data?.stocks || []) {
-      const normalizedSymbol = String(providerStock.symbol || '').replace(/\.(NS|BO)$/i, '');
-      quotesBySymbol.set(normalizedSymbol, toQuote(providerStock));
+  if (!resolvedStock?.instrumentKey) {
+    if (!isUpstoxReady()) {
+      warnOnce('upstox-disabled-single', 'Upstox market data is not configured. Using seeded stock prices.');
     }
-  } catch (error) {
-    warnOnce('market-data-list', `Market data fallback active: ${error.message}`);
-  }
 
-  return quotesBySymbol;
-};
-
-const enrichStocksWithLiveQuotes = async (stocks) => {
-  const quotesBySymbol = await getLiveQuotesForStocks(stocks);
-
-  return stocks.map((stock) => mergeQuoteIntoStock(stock, quotesBySymbol.get(stock.symbol)));
-};
-
-const getLiveQuoteForStock = async (stock) => {
-  const params = new URLSearchParams({
-    res: 'num',
-    symbol: getProviderSymbol(stock)
-  });
-
-  try {
-    const data = await fetchJson(`${MARKET_DATA_API_BASE_URL}/stock?${params.toString()}`);
-    return toQuote(data?.data);
-  } catch (error) {
-    warnOnce(`market-data-single-${stock.symbol}`, `Single stock fallback active for ${stock.symbol}: ${error.message}`);
     return null;
   }
+
+  const quotesByKey = await getUpstoxQuotes([resolvedStock.instrumentKey]);
+  return quotesByKey.get(resolvedStock.instrumentKey) || null;
 };
 
+const enrichStocksWithLiveQuotes = async (stocks, { allowSearch } = {}) => {
+  if (!Array.isArray(stocks) || stocks.length === 0) {
+    return [];
+  }
+
+  const shouldSearch = allowSearch ?? stocks.length <= 12;
+  const resolvedStocks = await Promise.all(stocks.map((stock) => resolveStockInput(stock, { allowSearch: shouldSearch })));
+  const instrumentKeys = [...new Set(resolvedStocks.map((stock) => stock?.instrumentKey).filter(Boolean))];
+
+  if (instrumentKeys.length === 0) {
+    if (!isUpstoxReady()) {
+      warnOnce('upstox-disabled-list', 'Upstox market data is not configured. Using seeded stock prices.');
+    }
+
+    return resolvedStocks.map((stock) => cloneStock(stock));
+  }
+
+  const quotesByKey = await getUpstoxQuotes(instrumentKeys);
+
+  return resolvedStocks.map((stock) => mergeQuoteIntoStock(stock, quotesByKey.get(stock.instrumentKey)));
+};
+
+const dedupeStocks = (stocks) => {
+  const uniqueStocks = new Map();
+
+  for (const stock of stocks) {
+    const key = stock.instrumentKey || `${normalizeSymbol(stock.symbol)}::${normalizeExchange(stock.exchange)}`;
+
+    if (!uniqueStocks.has(key)) {
+      uniqueStocks.set(key, stock);
+    }
+  }
+
+  return [...uniqueStocks.values()];
+};
+
+const searchStocks = async (query) => {
+  const normalizedQuery = String(query || '').trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return enrichStocksWithLiveQuotes(STOCKS.slice(0, 12), { allowSearch: true });
+  }
+
+  const localMatches = STOCKS.filter(
+    (stock) =>
+      stock.symbol.toLowerCase().includes(normalizedQuery) ||
+      stock.name.toLowerCase().includes(normalizedQuery)
+  );
+
+  const externalMatches = isUpstoxReady()
+    ? await searchUpstoxInstruments(query, { records: 12 })
+    : [];
+
+  const combined = dedupeStocks([...localMatches.map(cloneStock), ...externalMatches]).slice(0, 12);
+
+  return enrichStocksWithLiveQuotes(combined, { allowSearch: true });
+};
+
+const getLivePerformanceForStock = async (stock) => {
+  if (!stock?.instrumentKey || !isUpstoxReady()) {
+    return null;
+  }
+
+  const results = await Promise.all(chartRanges.map((range) => getUpstoxSeriesForRange(stock.instrumentKey, range)));
+  const performance = {};
+
+  chartRanges.forEach((range, index) => {
+    if (results[index]) {
+      performance[range] = results[index];
+    }
+  });
+
+  return Object.keys(performance).length > 0 ? performance : null;
+};
+
+const buildStockDetailsPayload = async (input = {}) => {
+  const resolvedStock = await resolveStockInput(input, { allowSearch: true });
+
+  if (!resolvedStock) {
+    return null;
+  }
+
+  const liveQuote = await getLiveQuoteForStock(resolvedStock, { allowSearch: false });
+  const liveStock = mergeQuoteIntoStock(resolvedStock, liveQuote);
+  const details = buildStockDetailsFromStock(liveStock);
+  const livePerformance = await getLivePerformanceForStock(liveStock);
+
+  if (livePerformance) {
+    details.performance = {
+      ...details.performance,
+      ...livePerformance
+    };
+  }
+
+  if (liveQuote) {
+    details.stats = {
+      ...details.stats,
+      lowerCircuit: liveQuote.lowerCircuitLimit || details.stats.lowerCircuit,
+      previousClose: liveQuote.previousClose || details.stats.previousClose,
+      todayHigh: liveQuote.high || details.stats.todayHigh,
+      todayLow: liveQuote.low || details.stats.todayLow,
+      upperCircuit: liveQuote.upperCircuitLimit || details.stats.upperCircuit
+    };
+  }
+
+  return details;
+};
+
+const getMarketDataStatus = () => getUpstoxStatus();
+
 module.exports = {
+  buildStockDetailsPayload,
   enrichStocksWithLiveQuotes,
   getLiveQuoteForStock,
-  getProviderSymbol,
+  getMarketDataStatus,
   mergeQuoteIntoStock,
-  toQuote
+  resolveStockInput,
+  searchStocks
 };
