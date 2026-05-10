@@ -42,6 +42,7 @@ npm run dev
 - `CLIENT_URL`: deployed marketing site URL
 - `DASHBOARD_URL`: deployed dashboard URL
 - `ALLOWED_ORIGINS`: optional comma-separated extra origins such as preview URLs
+- `MARKET_DATA_API_BASE_URL`: optional override for the Indian market data API base URL
 
 ### Frontend
 
@@ -51,6 +52,18 @@ npm run dev
 
 - `VITE_API_URL`: deployed API base URL, for example `https://your-api-domain.com/api`
 - `VITE_FRONTEND_URL`: deployed marketing site URL
+
+## Optional live market data
+
+The app uses the built-in stock dataset as a safe fallback. It can also fetch live Indian market quotes through the public API exposed by this project:
+
+- `https://github.com/0xramm/Indian-Stock-Market-API`
+
+By default the backend calls:
+
+- `https://nse-api-ruby.vercel.app`
+
+If that service is unavailable, the app automatically falls back to the local seeded prices so the platform still works.
 
 ## Build and deployment checks
 

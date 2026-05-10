@@ -5,6 +5,7 @@ const Position = require('../models/Position');
 const User = require('../models/User');
 const { getStockBySymbol } = require('../data/stocks');
 const { protect } = require('../middleware/auth');
+const { getLiveQuoteForStock } = require('../services/marketData');
 
 const router = express.Router();
 
@@ -31,7 +32,17 @@ const isMarketOpen = () => {
   return !['Sat', 'Sun'].includes(weekday) && totalMinutes >= openMinutes && totalMinutes <= closeMinutes;
 };
 
-const quoteFromStock = (stock) => {
+const quoteFromStock = async (stock) => {
+  const liveQuote = await getLiveQuoteForStock(stock);
+
+  if (liveQuote?.lastPrice) {
+    return {
+      ...stock,
+      day: liveQuote.changePercent,
+      price: liveQuote.lastPrice
+    };
+  }
+
   const noiseFactor = 1 + (Math.random() - 0.5) / 100;
   const price = Number((stock.price * noiseFactor).toFixed(2));
   const day = Number((stock.change + (Math.random() - 0.5) * 0.35).toFixed(2));
@@ -190,7 +201,7 @@ router.post('/new', protect, async (req, res) => {
       return res.status(400).json({ message: 'Quantity must be a positive number' });
     }
 
-    const liveQuote = quoteFromStock(stock);
+    const liveQuote = await quoteFromStock(stock);
     const executionPrice = Number(price || liveQuote.price);
 
     if (!Number.isFinite(executionPrice) || executionPrice <= 0) {
