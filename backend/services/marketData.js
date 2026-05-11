@@ -245,11 +245,16 @@ const getLivePerformanceForStock = async (stock) => {
 const buildStockDetailsPayload = async (input = {}) => {
   const resolvedStock = await resolveStockInput(input, { allowSearch: true });
 
-  if (!resolvedStock) {
+  if (!resolvedStock || !resolvedStock.instrumentKey || !isUpstoxReady()) {
     return null;
   }
 
   const liveQuote = await getLiveQuoteForStock(resolvedStock, { allowSearch: false });
+
+  if (!liveQuote) {
+    return null;
+  }
+
   const liveStock = mergeQuoteIntoStock(resolvedStock, liveQuote);
   const details = buildStockDetailsFromStock(liveStock);
   const livePerformance = await getLivePerformanceForStock(liveStock);
@@ -261,16 +266,14 @@ const buildStockDetailsPayload = async (input = {}) => {
     };
   }
 
-  if (liveQuote) {
-    details.stats = {
-      ...details.stats,
-      lowerCircuit: liveQuote.lowerCircuitLimit || details.stats.lowerCircuit,
-      previousClose: liveQuote.previousClose || details.stats.previousClose,
-      todayHigh: liveQuote.high || details.stats.todayHigh,
-      todayLow: liveQuote.low || details.stats.todayLow,
-      upperCircuit: liveQuote.upperCircuitLimit || details.stats.upperCircuit
-    };
-  }
+  details.stats = {
+    ...details.stats,
+    lowerCircuit: liveQuote.lowerCircuitLimit || details.stats.lowerCircuit,
+    previousClose: liveQuote.previousClose || details.stats.previousClose,
+    todayHigh: liveQuote.high || details.stats.todayHigh,
+    todayLow: liveQuote.low || details.stats.todayLow,
+    upperCircuit: liveQuote.upperCircuitLimit || details.stats.upperCircuit
+  };
 
   return details;
 };
