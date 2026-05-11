@@ -148,7 +148,8 @@ const mergeQuoteIntoStock = (stock, quote) => {
     ...stock,
     change: Number(quote.changePercent ?? stock.change ?? 0),
     price: Number(quote.lastPrice ?? stock.price ?? 0),
-    instrumentKey: quote.instrumentKey || stock.instrumentKey || ''
+    instrumentKey: quote.instrumentKey || stock.instrumentKey || '',
+    source: 'upstox'
   };
 };
 
