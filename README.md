@@ -1,14 +1,89 @@
 # Full Stack Trading Platform
 
-This repository contains three deployable apps:
+Full Stack Trading Platform is a web-based stock trading simulation system built to mirror the core workflow of a modern trading app. It combines a public product site, an authenticated trading dashboard, and an Express + MongoDB backend that handles authentication, portfolio state, order logic, and market-data-backed stock flows.
 
-- `backend`: Express + MongoDB API
-- `frontend`: public marketing site built with Vite + React
-- `dashboard`: authenticated trading dashboard built with Vite + React
+The project is designed for academic demonstration and full stack practice. Users can register, sign in, search stocks, inspect stock details, place buy and sell orders, track holdings and positions, manage funds, and review order history through a dashboard-oriented interface. The backend also exposes admin-facing operational views and supports Upstox-backed market data with a safe seeded fallback.
 
-## Local setup
+## Apps in This Repository
 
-1. Install dependencies:
+1. `frontend`  
+   Public marketing site built with React and Vite.
+
+2. `dashboard`  
+   Authenticated trading dashboard built with React and Vite.
+
+3. `backend`  
+   Express and MongoDB API that handles authentication, orders, holdings, positions, funds, profile data, admin routes, and market data services.
+
+## Core Features
+
+1. Secure user registration and login with JWT-based authentication
+2. Protected dashboard routes for authenticated users
+3. Stock and index search with market-data-backed enrichment
+4. Detailed stock views with chart-oriented performance data
+5. Buy and sell order workflows with validation
+6. Holdings and positions management
+7. Funds tracking and transaction history
+8. Admin panel for users, orders, holdings, and positions
+9. Upstox-backed market data with seeded fallback behavior
+10. Separate deployable frontend, dashboard, and backend apps
+
+## Tech Stack
+
+1. Frontend: React, Vite
+2. Dashboard: React, Vite
+3. Backend: Node.js, Express.js
+4. Database: MongoDB
+5. Authentication: JWT
+6. Market Data: Upstox token-based integration with local fallback
+7. Deployment: Vercel-style multi-project deployment
+
+## Project Architecture
+
+The repository is organized as a multi-app project.
+
+1. The `frontend` app is the public entry point and product-facing site.
+2. The `dashboard` app is the core trading workspace for authenticated users.
+3. The `backend` app exposes the API and business logic layer.
+4. MongoDB stores users, orders, holdings, positions, and fund transaction data.
+5. Upstox-backed token-based services can supply quotes, search results, and chart data when configured.
+
+## Market Data Behavior
+
+The application supports two market-data modes.
+
+1. Live-like mode  
+   If a valid Upstox token is configured in the backend, the app can enhance stock search, quotes, and chart-related data using external market data.
+
+2. Fallback mode  
+   If no token is configured, the app still works using the seeded stock dataset and generated chart behavior. This makes the project reliable for local development, demonstration, and academic evaluation.
+
+Recommended backend setup for market-data-only usage:
+
+```env
+UPSTOX_ANALYTICS_TOKEN=your_generated_token_here
+```
+
+If you already have a standard market-data token, you can use:
+
+```env
+UPSTOX_ACCESS_TOKEN=your_access_token_here
+```
+
+Useful backend status endpoints:
+
+1. `GET /api/auth/upstox/status`
+2. `GET /api/stocks/provider-status`
+
+## Local Development
+
+### Prerequisites
+
+1. Node.js 18 or newer
+2. npm
+3. MongoDB connection string
+
+### Install Dependencies
 
 ```bash
 npm install
@@ -17,155 +92,178 @@ npm --prefix frontend install
 npm --prefix dashboard install
 ```
 
-2. Copy environment files:
+### Create Environment Files
 
-```bash
+```powershell
 Copy-Item backend/.env.example backend/.env
 Copy-Item frontend/.env.example frontend/.env
 Copy-Item dashboard/.env.example dashboard/.env
 ```
 
-3. Start the full stack app:
+### Default Local URLs
+
+1. Frontend: `http://localhost:5173`
+2. Dashboard: `http://localhost:5174`
+3. Backend API: `http://localhost:5000/api`
+
+### Start the Project
 
 ```bash
 npm run dev
 ```
 
-## Production environment variables
+## Environment Variables
 
 ### Backend
 
-- `PORT`: API port provided by your host
-- `MONGO_URI`: MongoDB connection string
-- `JWT_SECRET`: at least 32 characters
-- `NODE_ENV`: `production`
-- `CLIENT_URL`: deployed marketing site URL
-- `DASHBOARD_URL`: deployed dashboard URL
-- `ALLOWED_ORIGINS`: optional comma-separated extra origins such as preview URLs
-- `UPSTOX_ANALYTICS_TOKEN`: optional read-only market-data token for quotes, search, and charts
-- `UPSTOX_ACCESS_TOKEN`: optional standard Upstox access token if you already have one
+1. `PORT`  
+   API port provided by the host or local environment
+
+2. `MONGO_URI`  
+   MongoDB connection string
+
+3. `JWT_SECRET`  
+   Secret used to sign JWT tokens. Use at least 32 characters.
+
+4. `NODE_ENV`  
+   Use `development` locally and `production` in deployment
+
+5. `CLIENT_URL`  
+   Public frontend URL
+
+6. `DASHBOARD_URL`  
+   Dashboard URL
+
+7. `ALLOWED_ORIGINS`  
+   Optional comma-separated extra origins such as preview URLs
+
+8. `UPSTOX_ANALYTICS_TOKEN`  
+   Optional read-only token for market-data-only usage
+
+9. `UPSTOX_ACCESS_TOKEN`  
+   Optional standard Upstox market data token
 
 ### Frontend
 
-- `VITE_DASHBOARD_URL`: deployed dashboard URL
+1. `VITE_DASHBOARD_URL`  
+   Dashboard base URL
 
 ### Dashboard
 
-- `VITE_API_URL`: deployed API base URL, for example `https://your-api-domain.com/api`
-- `VITE_FRONTEND_URL`: deployed marketing site URL
+1. `VITE_API_URL`  
+   Backend API base URL, for example `http://localhost:5000/api`
 
-## Market data mode
+2. `VITE_FRONTEND_URL`  
+   Public frontend base URL
 
-The app always has the seeded stock dataset as a fallback, but it now supports Upstox for:
+## Suggested Local Configuration
 
-- broader stock search beyond the local seed list
-- real-time quote refresh
-- live chart candles for the stock detail modal
-- quote-backed order ticket pricing for external stocks too
+### `backend/.env`
 
-If no Upstox token is configured, the app falls back automatically to seeded prices and generated chart data.
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_with_at_least_32_characters
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+DASHBOARD_URL=http://localhost:5174
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:5174
+UPSTOX_ANALYTICS_TOKEN=
+UPSTOX_ACCESS_TOKEN=
+```
 
-### Recommended setup
+### `frontend/.env`
 
-For market-data-only usage, set `UPSTOX_ANALYTICS_TOKEN` in `backend/.env`. That is the simplest option and is enough for search, quotes, and charts.
+```env
+VITE_DASHBOARD_URL=http://localhost:5174
+```
 
-If you already have a standard Upstox market-data token, you can use `UPSTOX_ACCESS_TOKEN` instead.
+### `dashboard/.env`
 
-The backend also exposes:
+```env
+VITE_API_URL=http://localhost:5000/api
+VITE_FRONTEND_URL=http://localhost:5173
+```
 
-- `GET /api/auth/upstox/status`
-- `GET /api/stocks/provider-status`
+## Main Backend Modules
 
-## Build and deployment checks
+1. Authentication  
+   Registration, login, current-user retrieval, JWT issue and protected routes
+
+2. Market Data  
+   Stock search, market overview, stock detail enrichment, quote resolution, and fallback logic
+
+3. Orders  
+   Buy and sell order creation, execution-state handling, holdings or positions updates, and funds adjustment
+
+4. Portfolio  
+   Holdings, positions, and funds state retrieval
+
+5. Profile  
+   User profile information including PAN and phone details
+
+6. Admin  
+   User, order, holding, and position visibility for administrative review
+
+## Validation and Trading Logic
+
+The system applies practical backend validation before recording trading activity.
+
+1. Registration validates required user details.
+2. Authentication checks credentials before dashboard access is granted.
+3. Order placement verifies stock input, quantity, price rules, and portfolio conditions.
+4. Buy orders check available funds before execution.
+5. Sell orders check available holding or position quantity before execution.
+6. Funds, holdings, and positions are updated according to the order mode and product type.
+
+## Build and Verification
 
 Run these checks before deploying:
 
 ```bash
-cd frontend
-npm run build
+cd backend
+npm test
+npm run validate
 
 cd ../dashboard
 npm run build
 
-cd ../backend
-npm run validate
+cd ../frontend
+npm run build
 ```
 
-## Recommended deployment layout
+## Deployment Structure
 
-### Backend
+The project is intended to be deployed as three separate apps.
 
-- Deploy `backend` as a separate Vercel project
-- Set the Root Directory to `backend`
-- Vercel can run this Express app directly from `backend/index.js`
-- Health check path: `/health`
-
-### Frontend
-
-- Deploy `frontend` as a separate Vercel project
-- Set the Root Directory to `frontend`
-- Build command: `npm run build`
-- Output directory: `dist`
-- Set `VITE_DASHBOARD_URL` to your deployed dashboard domain
-
-### Dashboard
-
-- Deploy `dashboard` as a separate Vercel project
-- Set the Root Directory to `dashboard`
-- Build command: `npm run build`
-- Output directory: `dist`
-- Set `VITE_API_URL` to your deployed backend API URL ending with `/api`
-- Set `VITE_FRONTEND_URL` to your deployed marketing site domain
-
-## Vercel setup
-
-Create 3 separate Vercel projects from the same repository:
-
-1. `frontend`
+1. `backend`
 2. `dashboard`
-3. `backend`
+3. `frontend`
 
-For each project in Vercel:
+### Recommended Deploy Order
 
-1. Import the same Git repository.
-2. Set the correct Root Directory.
-3. Add the environment variables for that app.
-4. Deploy once to get the generated `.vercel.app` domain.
+1. Deploy the backend first.
+2. Deploy the dashboard using the backend API URL.
+3. Deploy the frontend using the dashboard URL.
+4. Update backend CORS settings using the final frontend and dashboard domains.
 
-Use these environment variables on Vercel:
+## Live Deployment Links
 
-### `backend`
+1. Frontend: `https://full-stack-trading-platform-rhma.vercel.app/`
+2. Dashboard: `https://full-stack-trading-platform-virid.vercel.app/`
+3. Backend API: `https://trading-platform-backend-seven.vercel.app/api`
 
-- `MONGO_URI`
-- `JWT_SECRET`
-- `NODE_ENV=production`
-- `CLIENT_URL=https://<frontend-project>.vercel.app`
-- `DASHBOARD_URL=https://<dashboard-project>.vercel.app`
-- `ALLOWED_ORIGINS=` optional comma-separated extra origins
+## Repo Usage Notes
 
-### `frontend`
+1. This project is best treated as a trading simulation and portfolio workflow platform, not a licensed production brokerage platform.
+2. Live market-data behavior depends on backend token configuration.
+3. If external data is unavailable, the seeded dataset keeps the demo flow stable.
 
-- `VITE_DASHBOARD_URL=https://<dashboard-project>.vercel.app`
+## Future Improvements
 
-### `dashboard`
-
-- `VITE_API_URL=https://<backend-project>.vercel.app/api`
-- `VITE_FRONTEND_URL=https://<frontend-project>.vercel.app`
-
-### Vercel deploy order
-
-1. Deploy `backend` first.
-2. Deploy `dashboard` with the backend URL.
-3. Deploy `frontend` with the dashboard URL.
-4. Redeploy `backend` after setting the final frontend and dashboard URLs.
-
-### Preview deployments
-
-Vercel preview deployments create changing URLs for non-production branches. Because the backend uses explicit CORS allowlists, preview builds will only be able to call the API if their preview domains are included through `ALLOWED_ORIGINS` or by using production frontend and dashboard URLs.
-
-## Deployment order
-
-1. Deploy the backend and confirm `GET /health` returns `200`.
-2. Deploy the dashboard with the backend API URL.
-3. Deploy the frontend with the dashboard URL.
-4. Update backend CORS values so the final frontend and dashboard domains are allowed.
+1. Real-time market feed support through WebSocket integration
+2. More advanced charting and analytics
+3. Notification and alert workflows
+4. Expanded admin controls
+5. Richer trade history and downloadable reporting
+6. Deeper portfolio analytics
