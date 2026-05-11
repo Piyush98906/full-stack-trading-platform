@@ -242,9 +242,15 @@ const searchUpstoxInstruments = async (query, options = {}) => {
 };
 
 const normalizeQuote = (quote) => {
-  const previousClose = Number(quote?.ohlc?.close || 0);
-  const lastPrice = Number(quote?.last_price || 0);
-  const changeAbsolute = Number(quote?.net_change || lastPrice - previousClose);
+  const lastPrice = Number(quote?.last_price || quote?.ltp || 0);
+  const previousClose = Number(
+    quote?.ohlc?.close ||
+    quote?.previous_close ||
+    quote?.prev_close ||
+    (quote?.net_change != null && lastPrice ? lastPrice - Number(quote?.net_change) : 0) ||
+    0
+  );
+  const changeAbsolute = Number(quote?.net_change ?? lastPrice - previousClose);
   const changePercent = previousClose
     ? Number((((lastPrice - previousClose) / previousClose) * 100).toFixed(2))
     : 0;
