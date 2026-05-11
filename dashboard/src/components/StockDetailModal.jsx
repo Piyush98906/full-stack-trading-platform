@@ -70,6 +70,11 @@ function StockDetailModal() {
   const candleSeries = activeSeries?.candles || [];
   const allowTrading = details?.stock?.sector !== 'Index';
 
+  const stockChange = details?.stock?.change ?? (details?.stock?.price && details?.stats?.previousClose
+    ? Number((((details.stock.price - details.stats.previousClose) / details.stats.previousClose) * 100).toFixed(2))
+    : 0);
+  const activeChange = activeSeries?.change ?? 0;
+
   const chartData = useMemo(() => {
     if (!candleSeries.length || !details) {
       return null;
@@ -85,8 +90,8 @@ function StockDetailModal() {
         {
           label: `${details.stock.symbol} close`,
           data: closePrice,
-          borderColor: activeSeries.change >= 0 ? '#16A34A' : '#DC2626',
-          backgroundColor: activeSeries.change >= 0 ? 'rgba(22, 163, 74, 0.12)' : 'rgba(220, 38, 38, 0.12)',
+          borderColor: activeChange >= 0 ? '#16A34A' : '#DC2626',
+          backgroundColor: activeChange >= 0 ? 'rgba(22, 163, 74, 0.12)' : 'rgba(220, 38, 38, 0.12)',
           borderWidth: 2,
           fill: true,
           tension: 0.35,
@@ -118,7 +123,7 @@ function StockDetailModal() {
         }
       ]
     };
-  }, [candleSeries, details, activeSeries?.change]);
+  }, [candleSeries, details, activeChange]);
 
   if (!selectedStock?.symbol) {
     return null;
@@ -126,8 +131,8 @@ function StockDetailModal() {
 
   return (
     <>
-      <div className="modal-overlay">
-        <div className="stock-detail-modal">
+      <div className="modal-overlay" onClick={closeStockDetail}>
+        <div className="stock-detail-modal" onClick={(event) => event.stopPropagation()}>
           <div className="modal-header">
             <div>
               <span className="section-label">Stock Snapshot</span>
@@ -154,9 +159,9 @@ function StockDetailModal() {
               <div className="stock-hero">
                 <div>
                   <strong className="stock-live-price">{formatINR(details.stock.price)}</strong>
-                  <p className={details.stock.change >= 0 ? 'text-success' : 'text-danger'}>
-                    {details.stock.change >= 0 ? '+' : ''}
-                    {details.stock.change.toFixed(2)}% today
+                  <p className={stockChange >= 0 ? 'text-success' : 'text-danger'}>
+                    {stockChange >= 0 ? '+' : ''}
+                    {stockChange.toFixed(2)}% today
                   </p>
                 </div>
                 <div className="stock-stat-strip">
@@ -222,9 +227,9 @@ function StockDetailModal() {
                       <span className="section-label">Previous Performance</span>
                       <h3>{activeRange} trend</h3>
                     </div>
-                    <span className={activeSeries.change >= 0 ? 'pill-badge badge-executed' : 'pill-badge badge-cancelled'}>
-                      {activeSeries.change >= 0 ? '+' : ''}
-                      {activeSeries.change.toFixed(2)}%
+                    <span className={activeChange >= 0 ? 'pill-badge badge-executed' : 'pill-badge badge-cancelled'}>
+                      {activeChange >= 0 ? '+' : ''}
+                      {activeChange.toFixed(2)}%
                     </span>
                   </div>
                   <div style={{ flex: 1, position: 'relative', minHeight: '320px' }}>
