@@ -171,7 +171,7 @@ function DashboardHome() {
 
           <div className="indices-widget">
             {marketOverview.indices.map((item) => (
-              <button className="mini-row mini-row-button" key={item.symbol} onClick={() => openStockDetail(item.symbol)} type="button">
+              <button className="mini-row mini-row-button" key={item.symbol} onClick={() => openStockDetail(item)} type="button">
                 <div>
                   <strong>{item.symbol}</strong>
                   <small>{item.exchange}</small>
@@ -198,7 +198,7 @@ function DashboardHome() {
             </div>
           </div>
           {marketOverview.topGainers.map((stock) => (
-            <button className="mini-row mini-row-button" key={stock.symbol} onClick={() => openStockDetail(stock.symbol)} type="button">
+            <button className="mini-row mini-row-button" key={stock.symbol} onClick={() => openStockDetail(stock)} type="button">
               <div>
                 <strong>{stock.symbol}</strong>
                 <small>{stock.name}</small>
@@ -219,7 +219,7 @@ function DashboardHome() {
             </div>
           </div>
           {marketOverview.topLosers.map((stock) => (
-            <button className="mini-row mini-row-button" key={stock.symbol} onClick={() => openStockDetail(stock.symbol)} type="button">
+            <button className="mini-row mini-row-button" key={stock.symbol} onClick={() => openStockDetail(stock)} type="button">
               <div>
                 <strong>{stock.symbol}</strong>
                 <small>{stock.name}</small>
@@ -240,13 +240,14 @@ function DashboardHome() {
             </div>
           </div>
           {marketOverview.topIntraday.map((stock) => (
-            <button className="mini-row mini-row-button" key={stock.symbol} onClick={() => openStockDetail(stock.symbol)} type="button">
+            <button className="mini-row mini-row-button" key={stock.symbol} onClick={() => openStockDetail(stock)} type="button">
               <div>
                 <strong>{stock.symbol}</strong>
                 <small>{stock.name}</small>
               </div>
               <div className="text-right">
-                <strong>{formatCompact(stock.turnover)}</strong>
+                <strong>{formatINR(stock.price)}</strong>
+                <small className="text-muted">Turnover {formatCompact(stock.turnover)}</small>
                 <small className={stock.change >= 0 ? 'text-success' : 'text-danger'}>
                   {stock.change >= 0 ? '+' : ''}
                   {stock.change.toFixed(2)}%

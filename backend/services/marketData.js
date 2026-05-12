@@ -11,6 +11,7 @@ const {
 
 const warningCache = new Set();
 const chartRanges = ['1D', '3D', '5D', '1W', '1M', '6M'];
+const SEARCH_CONCURRENCY = 6;
 
 const warnOnce = (key, message) => {
   if (warningCache.has(key)) {
@@ -26,6 +27,24 @@ const normalizeSymbol = (value) => String(value || '').trim().toUpperCase();
 const normalizeExchange = (value) => String(value || 'NSE').trim().toUpperCase();
 
 const cloneStock = (stock) => ({ ...stock });
+
+const mapWithConcurrency = async (items, concurrency, iteratee) => {
+  const results = new Array(items.length);
+  let cursor = 0;
+
+  const worker = async () => {
+    while (cursor < items.length) {
+      const currentIndex = cursor;
+      cursor += 1;
+      results[currentIndex] = await iteratee(items[currentIndex], currentIndex);
+    }
+  };
+
+  const workerCount = Math.min(Math.max(concurrency, 1), items.length || 1);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+
+  return results;
+};
 
 const createExternalStock = (input = {}) => ({
   symbol: normalizeSymbol(input.symbol),
@@ -174,7 +193,11 @@ const enrichStocksWithLiveQuotes = async (stocks, { allowSearch } = {}) => {
   }
 
   const shouldSearch = allowSearch ?? stocks.length <= 12;
-  const resolvedStocks = await Promise.all(stocks.map((stock) => resolveStockInput(stock, { allowSearch: shouldSearch })));
+  const resolvedStocks = await mapWithConcurrency(
+    stocks,
+    shouldSearch ? SEARCH_CONCURRENCY : stocks.length,
+    (stock) => resolveStockInput(stock, { allowSearch: shouldSearch })
+  );
   const instrumentKeys = [...new Set(resolvedStocks.map((stock) => stock?.instrumentKey).filter(Boolean))];
 
   if (instrumentKeys.length === 0) {

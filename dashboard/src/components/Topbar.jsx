@@ -28,6 +28,7 @@ function Topbar({ onMenuClick }) {
   const deferredQuery = useDeferredValue(query);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [indices, setIndices] = useState(staticIndices);
 
   useEffect(() => {
     if (!String(deferredQuery).trim()) {
@@ -56,6 +57,21 @@ function Topbar({ onMenuClick }) {
       window.clearTimeout(timeout);
     };
   }, [deferredQuery]);
+
+  useEffect(() => {
+    const fetchIndices = async () => {
+      try {
+        const { data } = await api.get('/stocks/market-overview');
+        if (Array.isArray(data.indices) && data.indices.length > 0) {
+          setIndices(data.indices);
+        }
+      } catch (error) {
+        setIndices(staticIndices);
+      }
+    };
+
+    fetchIndices();
+  }, []);
 
   const handleResultClick = (stock) => {
     startTransition(() => {
@@ -134,10 +150,10 @@ function Topbar({ onMenuClick }) {
       </div>
 
       <div className="indices-strip">
-        {staticIndices.slice(0, 4).map((index) => (
-          <button className="index-chip index-chip-button" key={index.symbol} onClick={() => openStockDetail(index.symbol)} type="button">
+        {indices.slice(0, 4).map((index) => (
+          <button className="index-chip index-chip-button" key={index.symbol} onClick={() => openStockDetail(index)} type="button">
             <span>{index.symbol}  </span>
-            <strong>{index.value.toLocaleString('en-IN')} </strong>
+            <strong>{Number(index.price ?? index.value ?? 0).toLocaleString('en-IN')} </strong>
             <small className={index.change >= 0 ? 'text-success' : 'text-danger'}>
               {index.change >= 0 ? '+' : ''}
               {index.change.toFixed(2)}%  

@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Line } from 'react-chartjs-2';
+import { useEffect, useState } from 'react';
 import api from '../utils/api';
 import { formatCompact, formatINR } from '../utils/format';
 import { useStockDetail } from '../context/StockDetailContext';
 import BuyModal from './BuyModal';
+import CandlestickChart from './CandlestickChart';
 import EmptyState from './EmptyState';
 import LoadingSpinner from './LoadingSpinner';
 
@@ -74,56 +74,6 @@ function StockDetailModal() {
     ? Number((((details.stock.price - details.stats.previousClose) / details.stats.previousClose) * 100).toFixed(2))
     : 0);
   const activeChange = activeSeries?.change ?? 0;
-
-  const chartData = useMemo(() => {
-    if (!candleSeries.length || !details) {
-      return null;
-    }
-
-    const closePrice = candleSeries.map((candle) => candle.close);
-    const highPrice = candleSeries.map((candle) => candle.high);
-    const lowPrice = candleSeries.map((candle) => candle.low);
-
-    return {
-      labels: candleSeries.map((candle) => candle.label),
-      datasets: [
-        {
-          label: `${details.stock.symbol} close`,
-          data: closePrice,
-          borderColor: activeChange >= 0 ? '#16A34A' : '#DC2626',
-          backgroundColor: activeChange >= 0 ? 'rgba(22, 163, 74, 0.12)' : 'rgba(220, 38, 38, 0.12)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.35,
-          pointRadius: 2,
-          pointHoverRadius: 4,
-          yAxisID: 'y'
-        },
-        {
-          label: `${details.stock.symbol} high`,
-          data: highPrice,
-          borderColor: '#0EA5E9',
-          borderWidth: 1,
-          borderDash: [5, 5],
-          fill: false,
-          tension: 0.35,
-          pointRadius: 0,
-          yAxisID: 'y'
-        },
-        {
-          label: `${details.stock.symbol} low`,
-          data: lowPrice,
-          borderColor: '#F97316',
-          borderWidth: 1,
-          borderDash: [5, 5],
-          fill: false,
-          tension: 0.35,
-          pointRadius: 0,
-          yAxisID: 'y'
-        }
-      ]
-    };
-  }, [candleSeries, details, activeChange]);
 
   if (!selectedStock?.symbol) {
     return null;
@@ -220,12 +170,12 @@ function StockDetailModal() {
                 )}
               </div>
 
-              {chartData ? (
+              {candleSeries.length ? (
                 <div className="panel-card stock-chart-card">
                   <div className="stock-chart-head">
                     <div>
                       <span className="section-label">Previous Performance</span>
-                      <h3>{activeRange} trend</h3>
+                      <h3>{activeRange} candlestick chart</h3>
                     </div>
                     <span className={activeChange >= 0 ? 'pill-badge badge-executed' : 'pill-badge badge-cancelled'}>
                       {activeChange >= 0 ? '+' : ''}
@@ -233,29 +183,7 @@ function StockDetailModal() {
                     </span>
                   </div>
                   <div style={{ flex: 1, position: 'relative', minHeight: '320px' }}>
-                    <Line
-                      key={`${selectedStock.symbol}-${activeRange}`}
-                      data={chartData}
-                      redraw
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: { display: true, position: 'top' },
-                          tooltip: { mode: 'index', intersect: false }
-                        },
-                        scales: {
-                          x: {
-                            grid: { display: false },
-                            ticks: { color: '#94a3b8' }
-                          },
-                          y: {
-                            grid: { color: 'rgba(255,255,255,0.08)' },
-                            ticks: { color: '#94a3b8' }
-                          }
-                        }
-                      }}
-                    />
+                    <CandlestickChart candles={candleSeries} />
                   </div>
                 </div>
               ) : null}

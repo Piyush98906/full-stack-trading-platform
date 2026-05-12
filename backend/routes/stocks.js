@@ -18,14 +18,10 @@ router.get('/search', protect, async (req, res) => {
     const query = String(req.query.q || '').trim().toLowerCase();
 
     if (!query) {
-      const stocks = await enrichStocksWithLiveQuotes(STOCKS.slice(0, 12), { allowSearch: true });
-      const liveStocks = stocks.filter((stock) => stock.instrumentKey && stock.source === 'upstox');
-      return res.json({ stocks: liveStocks });
+      return res.json({ stocks: await enrichStocksWithLiveQuotes(STOCKS.slice(0, 12), { allowSearch: true }) });
     }
 
-    const searchResults = await searchStocks(query);
-    const liveStocks = searchResults.filter((stock) => stock.instrumentKey && stock.source === 'upstox');
-    return res.json({ stocks: liveStocks });
+    return res.json({ stocks: await searchStocks(query) });
   } catch (error) {
     return res.status(500).json({ message: 'Failed to search stocks' });
   }
@@ -37,20 +33,8 @@ router.get('/provider-status', protect, (req, res) => {
 
 router.get('/market-overview', protect, async (req, res) => {
   try {
-    const liveStocks = await enrichStocksWithLiveQuotes(STOCKS, { allowSearch: false });
-    // Filter to only include stocks with valid live quotes (have instrumentKey and source indicates live data)
-    const stocksWithLiveData = liveStocks.filter((stock) => stock.instrumentKey && stock.source === 'upstox');
-    
-    if (stocksWithLiveData.length === 0) {
-      return res.json({
-        topGainers: [],
-        topLosers: [],
-        topIntraday: [],
-        indices: []
-      });
-    }
-
-    const equities = stocksWithLiveData.filter((stock) => stock.sector !== 'Index');
+    const liveStocks = await enrichStocksWithLiveQuotes(STOCKS, { allowSearch: true });
+    const equities = liveStocks.filter((stock) => stock.sector !== 'Index');
     const rankedByGain = [...equities].sort((a, b) => b.change - a.change);
     const rankedByLoss = [...equities].sort((a, b) => a.change - b.change);
     const intraday = [...equities]
@@ -64,7 +48,7 @@ router.get('/market-overview', protect, async (req, res) => {
       topGainers: rankedByGain.slice(0, 5),
       topLosers: rankedByLoss.slice(0, 5),
       topIntraday: intraday.slice(0, 6),
-      indices: stocksWithLiveData.filter((stock) => stock.sector === 'Index')
+      indices: liveStocks.filter((stock) => stock.sector === 'Index')
     });
   } catch (error) {
     return res.status(500).json({ message: 'Failed to fetch market overview' });
