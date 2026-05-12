@@ -151,7 +151,7 @@ function Holdings() {
                       <td>{index + 1}</td>
                       <td>
                         <div className="stacked-cell">
-                          <button className="stock-link-button" onClick={() => openStockDetail(item.name)} type="button">
+                          <button className="stock-link-button" onClick={() => openStockDetail(item)} type="button">
                             {item.name}
                           </button>
                           <span>{item.exchange}</span>

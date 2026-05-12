@@ -103,7 +103,7 @@ function Positions() {
                     <tr className={item.isLoss ? 'position-loss-row' : ''} key={item._id}>
                       <td><span className={`pill-badge badge-${item.product.toLowerCase()}`}>{item.product}</span></td>
                       <td>
-                        <button className="stock-link-button" onClick={() => openStockDetail(item.name)} type="button">
+                        <button className="stock-link-button" onClick={() => openStockDetail(item)} type="button">
                           {item.name}
                         </button>
                       </td>
