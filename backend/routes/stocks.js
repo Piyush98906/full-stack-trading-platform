@@ -38,16 +38,23 @@ router.get('/market-overview', protect, async (req, res) => {
     const rankedByGain = [...equities].sort((a, b) => b.change - a.change);
     const rankedByLoss = [...equities].sort((a, b) => a.change - b.change);
     const intraday = [...equities]
+      .filter((stock) => Number(stock.volume || 0) > 0)
       .map((stock) => ({
         ...stock,
-        turnover: Number((stock.price * (stock.symbol.length * 8500 + Math.abs(stock.change) * 10000)).toFixed(2))
+        turnover: Number((stock.price * Number(stock.volume || 0)).toFixed(2))
       }))
-      .sort((a, b) => b.turnover - a.turnover);
+      .sort((a, b) => {
+        if (b.volume !== a.volume) {
+          return b.volume - a.volume;
+        }
+
+        return b.turnover - a.turnover;
+      });
 
     return res.json({
       topGainers: rankedByGain.slice(0, 5),
       topLosers: rankedByLoss.slice(0, 5),
-      topIntraday: intraday.slice(0, 6),
+      topIntraday: intraday.slice(0, 5),
       indices: liveStocks.filter((stock) => stock.sector === 'Index')
     });
   } catch (error) {

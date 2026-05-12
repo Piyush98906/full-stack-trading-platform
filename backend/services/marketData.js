@@ -10,7 +10,7 @@ const {
 } = require('./upstoxData');
 
 const warningCache = new Set();
-const chartRanges = ['1D', '3D', '5D', '1W', '1M', '6M'];
+const chartRanges = ['1D', '1W', '1M', '6M'];
 const SEARCH_CONCURRENCY = 6;
 
 const warnOnce = (key, message) => {
@@ -53,6 +53,7 @@ const createExternalStock = (input = {}) => ({
   sector: input.sector || 'Equity',
   price: Number(input.price || 0),
   change: Number(input.change || 0),
+  volume: Number(input.volume || 0),
   instrumentKey: input.instrumentKey || '',
   instrumentType: input.instrumentType || '',
   segment: input.segment || '',
@@ -68,6 +69,7 @@ const mergeStockMetadata = (baseStock, overlay = {}) => ({
   sector: baseStock.sector || overlay.sector || 'Equity',
   price: Number(overlay.price ?? baseStock.price ?? 0),
   change: Number(overlay.change ?? baseStock.change ?? 0),
+  volume: Number(overlay.volume ?? baseStock.volume ?? 0),
   instrumentKey: overlay.instrumentKey || baseStock.instrumentKey || '',
   instrumentType: overlay.instrumentType || baseStock.instrumentType || '',
   segment: overlay.segment || baseStock.segment || '',
@@ -167,6 +169,7 @@ const mergeQuoteIntoStock = (stock, quote) => {
     ...stock,
     change: Number(quote.changePercent ?? stock.change ?? 0),
     price: Number(quote.lastPrice ?? stock.price ?? 0),
+    volume: Number(quote.volume ?? stock.volume ?? 0),
     instrumentKey: quote.instrumentKey || stock.instrumentKey || '',
     source: 'upstox'
   };

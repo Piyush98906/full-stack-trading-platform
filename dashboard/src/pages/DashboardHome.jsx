@@ -247,7 +247,7 @@ function DashboardHome() {
               </div>
               <div className="text-right">
                 <strong>{formatINR(stock.price)}</strong>
-                <small className="text-muted">Turnover {formatCompact(stock.turnover)}</small>
+                <small className="text-muted">Volume {formatCompact(stock.volume || 0)}</small>
                 <small className={stock.change >= 0 ? 'text-success' : 'text-danger'}>
                   {stock.change >= 0 ? '+' : ''}
                   {stock.change.toFixed(2)}%

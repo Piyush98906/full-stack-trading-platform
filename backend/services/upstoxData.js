@@ -9,9 +9,7 @@ const instrumentCacheBySymbol = new Map();
 const warningCache = new Set();
 
 const rangeConfig = {
-  '1D': { kind: 'intraday', unit: 'minutes', interval: '15' },
-  '3D': { kind: 'historical', unit: 'days', interval: '1', lookbackDays: 3 },
-  '5D': { kind: 'historical', unit: 'days', interval: '1', lookbackDays: 5 },
+  '1D': { kind: 'intraday', unit: 'minutes', interval: '10' },
   '1W': { kind: 'historical', unit: 'days', interval: '1', lookbackDays: 7 },
   '1M': { kind: 'historical', unit: 'days', interval: '1', lookbackDays: 30 },
   '6M': { kind: 'historical', unit: 'weeks', interval: '1', lookbackDays: 180 }

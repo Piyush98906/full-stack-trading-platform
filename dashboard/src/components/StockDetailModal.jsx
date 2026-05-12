@@ -7,7 +7,7 @@ import CandlestickChart from './CandlestickChart';
 import EmptyState from './EmptyState';
 import LoadingSpinner from './LoadingSpinner';
 
-const ranges = ['1D', '3D', '5D', '1W', '1M', '6M'];
+const ranges = ['1D', '1W', '1M', '6M'];
 
 function StockDetailModal() {
   const { selectedStock, closeStockDetail } = useStockDetail();
@@ -92,9 +92,6 @@ function StockDetailModal() {
               </h2>
               {details?.company ? <p className="stock-subtitle">{details.company.companyName}</p> : null}
             </div>
-            <button className="icon-button" onClick={closeStockDetail} type="button">
-              X
-            </button>
           </div>
 
           {loading ? (

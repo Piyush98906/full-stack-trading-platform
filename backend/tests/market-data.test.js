@@ -20,6 +20,7 @@ test('mergeQuoteIntoStock overlays live price and percent change', () => {
     symbol: 'INFY',
     price: 1526.5,
     change: 2.04,
+    volume: 0,
     instrumentKey: '',
     source: 'upstox'
   });

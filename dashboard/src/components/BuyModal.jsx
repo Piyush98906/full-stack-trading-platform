@@ -19,7 +19,7 @@ function BuyModal({ open, stock, mode: initialMode = 'buy', onClose, onSuccess, 
 
     setMode(initialMode);
     setOrderType('market');
-    setProduct(initialMode === 'sell' ? 'CNC' : 'CNC');
+    setProduct('CNC');
     setQty(1);
     setPrice(stock.price || 0);
 
@@ -76,8 +76,8 @@ function BuyModal({ open, stock, mode: initialMode = 'buy', onClose, onSuccess, 
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="buy-modal">
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="buy-modal" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header">
           <div>
             <span className="section-label">Execution Ticket</span>
@@ -85,9 +85,6 @@ function BuyModal({ open, stock, mode: initialMode = 'buy', onClose, onSuccess, 
               {stock.symbol} <span className="text-muted">· {stock.exchange}</span>
             </h2>
           </div>
-          <button className="icon-button" onClick={onClose} type="button">
-            ✕
-          </button>
         </div>
 
         <div className="tab-row">

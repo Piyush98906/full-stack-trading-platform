@@ -101,9 +101,7 @@ const sectorHeadquarters = {
 };
 
 const rangeDefinitions = {
-  '1D': { points: 7, amplitude: 0.009, labels: ['09:15', '10:00', '11:00', '12:30', '13:30', '14:30', '15:30'] },
-  '3D': { points: 3, amplitude: 0.018, labels: ['Day 1', 'Day 2', 'Day 3'] },
-  '5D': { points: 5, amplitude: 0.024, labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] },
+  '1D': { points: 7, amplitude: 0.009, labels: ['09:15', '09:25', '09:35', '09:45', '09:55', '10:05', '10:15'] },
   '1W': { points: 5, amplitude: 0.028, labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] },
   '1M': { points: 6, amplitude: 0.052, labels: ['W1', 'W2', 'W3', 'W4', 'W5', 'Now'] },
   '6M': { points: 6, amplitude: 0.135, labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Now'] }
