@@ -20,7 +20,8 @@ router.get('/', protect, async (req, res) => {
     const enrichedHoldings = holdings.map((item, index) => {
       const liveStock = liveStocks[index];
       const livePrice = Number(liveStock?.price ?? item.price);
-      const dayChange = Number(liveStock?.change ?? Number(String(item.day).replace('%', '')) || 0);
+      const storedDayChange = Number(String(item.day || '').replace('%', '')) || 0;
+      const dayChange = Number(liveStock?.change ?? storedDayChange);
       const netPercent = item.avg ? ((livePrice - item.avg) / item.avg) * 100 : 0;
 
       return {
