@@ -109,7 +109,7 @@ const scoreInstrumentMatch = (instrument, target) => {
     score += 15;
   }
 
-  if (targetName && String(instrument.name || '').toLowerCase().includes(targetName)) {
+  if (targetName  && String(instrument.name || '').toLowerCase().includes(targetName)) {
     score += 5;
   }
 
