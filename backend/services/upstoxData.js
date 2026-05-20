@@ -14,6 +14,9 @@ const rangeConfig = {
   '1M': { kind: 'historical', unit: 'days', interval: '1', lookbackDays: 30 },
   '6M': { kind: 'historical', unit: 'weeks', interval: '1', lookbackDays: 180 }
 };
+const SESSION_START_MINUTES = 9 * 60 + 15;
+const SESSION_END_MINUTES = 15 * 60 + 25;
+const SESSION_INTERVAL_MINUTES = 10;
 
 const trimValue = (value) => String(value || '').trim();
 
@@ -273,6 +276,36 @@ const normalizeQuote = (quote) => {
   };
 };
 
+const buildIntradaySessionSlots = () => {
+  const slots = [];
+
+  for (let minutes = SESSION_START_MINUTES; minutes <= SESSION_END_MINUTES; minutes += SESSION_INTERVAL_MINUTES) {
+    const hours = String(Math.floor(minutes / 60)).padStart(2, '0');
+    const mins = String(minutes % 60).padStart(2, '0');
+    slots.push(`${hours}:${mins}`);
+  }
+
+  return slots;
+};
+
+const getIntradaySlotIndex = (timestamp) => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(new Date(timestamp));
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value || 0);
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value || 0);
+  const totalMinutes = hour * 60 + minute;
+
+  if (totalMinutes < SESSION_START_MINUTES) {
+    return 0;
+  }
+
+  return Math.max(0, Math.floor((totalMinutes - SESSION_START_MINUTES) / SESSION_INTERVAL_MINUTES));
+};
+
 const getUpstoxQuotes = async (instrumentKeys) => {
   const uniqueKeys = [...new Set((instrumentKeys || []).filter(Boolean))];
 
@@ -353,6 +386,7 @@ const formatCandleLabel = (timestamp, rangeKey) => {
 };
 
 const buildSeriesFromCandles = (rawCandles, rangeKey) => {
+  const sessionSlots = rangeKey === '1D' ? buildIntradaySessionSlots() : null;
   const candles = [...rawCandles]
     .map((item) => ({
       label: formatCandleLabel(item[0], rangeKey),
@@ -361,7 +395,8 @@ const buildSeriesFromCandles = (rawCandles, rangeKey) => {
       high: Number(item[2] || 0),
       low: Number(item[3] || 0),
       close: Number(item[4] || 0),
-      volume: Number(item[5] || 0)
+      volume: Number(item[5] || 0),
+      slotIndex: rangeKey === '1D' ? getIntradaySlotIndex(item[0]) : null
     }))
     .sort((left, right) => new Date(left.time).getTime() - new Date(right.time).getTime());
 
@@ -379,7 +414,8 @@ const buildSeriesFromCandles = (rawCandles, rangeKey) => {
     candles,
     change: start ? Number((((end - start) / start) * 100).toFixed(2)) : 0,
     high,
-    low
+    low,
+    sessionSlots
   };
 };
 

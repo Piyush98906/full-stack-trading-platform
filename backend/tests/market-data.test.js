@@ -6,10 +6,15 @@ const {
   mergeQuoteIntoStock
 } = require('../services/marketData');
 
-test('mergeQuoteIntoStock keeps original stock when no live quote exists', () => {
+test('mergeQuoteIntoStock generates a simulated live quote when no provider quote exists', () => {
   const stock = { symbol: 'INFY', price: 1510, change: 1.23 };
+  const merged = mergeQuoteIntoStock(stock, null);
 
-  assert.deepEqual(mergeQuoteIntoStock(stock, null), stock);
+  assert.equal(merged.symbol, 'INFY');
+  assert.equal(merged.source, 'simulated');
+  assert.equal(typeof merged.price, 'number');
+  assert.equal(typeof merged.change, 'number');
+  assert.notEqual(merged.price, 0);
 });
 
 test('mergeQuoteIntoStock overlays live price and percent change', () => {

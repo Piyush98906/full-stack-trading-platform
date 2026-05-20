@@ -14,7 +14,7 @@ function BuyModal({ open, stock, mode: initialMode = 'buy', onClose, onSuccess, 
 
   useEffect(() => {
     if (!open || !stock) {
-      return;
+      return undefined;
     }
 
     setMode(initialMode);
@@ -40,6 +40,11 @@ function BuyModal({ open, stock, mode: initialMode = 'buy', onClose, onSuccess, 
     };
 
     fetchQuote();
+    const timer = window.setInterval(fetchQuote, 10000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
   }, [open, stock, initialMode]);
 
   const estimate = useMemo(() => Number(qty || 0) * Number(price || 0), [qty, price]);
@@ -81,9 +86,7 @@ function BuyModal({ open, stock, mode: initialMode = 'buy', onClose, onSuccess, 
         <div className="modal-header">
           <div>
             <span className="section-label">Execution Ticket</span>
-            <h2>
-              {stock.symbol} <span className="text-muted">· {stock.exchange}</span>
-            </h2>
+            <h2>{stock.symbol} <span className="text-muted">{`· ${stock.exchange}`}</span></h2>
           </div>
         </div>
 

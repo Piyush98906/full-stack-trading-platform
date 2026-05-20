@@ -101,11 +101,15 @@ const sectorHeadquarters = {
 };
 
 const rangeDefinitions = {
-  '1D': { points: 7, amplitude: 0.009, labels: ['09:15', '09:25', '09:35', '09:45', '09:55', '10:05', '10:15'] },
+  '1D': { points: 38, amplitude: 0.009 },
   '1W': { points: 5, amplitude: 0.028, labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] },
   '1M': { points: 6, amplitude: 0.052, labels: ['W1', 'W2', 'W3', 'W4', 'W5', 'Now'] },
   '6M': { points: 6, amplitude: 0.135, labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Now'] }
 };
+
+const SESSION_START_MINUTES = 9 * 60 + 15;
+const SESSION_END_MINUTES = 15 * 60 + 25;
+const SESSION_INTERVAL_MINUTES = 10;
 
 const makeSlug = (text) => text.toLowerCase().replace(/[^a-z0-9]+/g, '');
 
@@ -115,13 +119,50 @@ const getStockBySymbol = (symbol) =>
 const getSeedNumber = (stock) =>
   stock.symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
+const getIntradaySessionSlots = () => {
+  const labels = [];
+
+  for (let minutes = SESSION_START_MINUTES; minutes <= SESSION_END_MINUTES; minutes += SESSION_INTERVAL_MINUTES) {
+    const hours = String(Math.floor(minutes / 60)).padStart(2, '0');
+    const mins = String(minutes % 60).padStart(2, '0');
+    labels.push(`${hours}:${mins}`);
+  }
+
+  return labels;
+};
+
+const getIntradayVisibleCount = (slotCount) => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(new Date());
+  const weekday = parts.find((item) => item.type === 'weekday')?.value || 'Mon';
+  const hour = Number(parts.find((item) => item.type === 'hour')?.value || 0);
+  const minute = Number(parts.find((item) => item.type === 'minute')?.value || 0);
+  const totalMinutes = hour * 60 + minute;
+  const isWeekday = !['Sat', 'Sun'].includes(weekday);
+
+  if (!isWeekday || totalMinutes < SESSION_START_MINUTES || totalMinutes > SESSION_END_MINUTES + 5) {
+    return slotCount;
+  }
+
+  const completedSlots = Math.floor((totalMinutes - SESSION_START_MINUTES) / SESSION_INTERVAL_MINUTES) + 1;
+  return Math.max(1, Math.min(slotCount, completedSlots));
+};
+
 const createSeries = (stock, definition, key) => {
   const seed = getSeedNumber(stock);
   const candles = [];
   const baseDate = new Date(2026, 0, 1, 9, 15);
+  const sessionSlots = key === '1D' ? getIntradaySessionSlots() : null;
+  const labels = sessionSlots || definition.labels;
+  const visibleCount = key === '1D' ? getIntradayVisibleCount(labels.length) : labels.length;
 
-  for (let index = 0; index < definition.labels.length; index += 1) {
-    const label = definition.labels[index];
+  for (let index = 0; index < visibleCount; index += 1) {
+    const label = labels[index];
     const drift = ((index + 1) / definition.points) * (stock.change / 100);
     const base = stock.price * (1 - definition.amplitude / 2 + drift);
     const close = Number((base + Math.sin((seed + index * 17) / 11) * stock.price * definition.amplitude).toFixed(2));
@@ -131,12 +172,12 @@ const createSeries = (stock, definition, key) => {
 
     const time = new Date(baseDate);
     if (key === '1D') {
-      time.setMinutes(baseDate.getMinutes() + index * 60);
+      time.setMinutes(baseDate.getMinutes() + index * SESSION_INTERVAL_MINUTES);
     } else {
       time.setDate(baseDate.getDate() + index);
     }
 
-    candles.push({ label, time, open, high, low, close });
+    candles.push({ label, time, open, high, low, close, slotIndex: index });
   }
 
   const low = Math.min(...candles.map((item) => item.low));
@@ -149,7 +190,8 @@ const createSeries = (stock, definition, key) => {
     candles,
     change: Number((((end - start) / start) * 100).toFixed(2)),
     high,
-    low
+    low,
+    sessionSlots
   };
 };
 

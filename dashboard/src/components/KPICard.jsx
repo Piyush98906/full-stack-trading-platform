@@ -1,4 +1,4 @@
-function KPICard({ title, value, change, icon, tone = 'primary', onClick }) {
+function KPICard({ title, value, change, changeTone = 'auto', icon, tone = 'primary', onClick }) {
   const handleKeyDown = (event) => {
     if (!onClick) {
       return;
@@ -22,7 +22,23 @@ function KPICard({ title, value, change, icon, tone = 'primary', onClick }) {
       <div className="kpi-copy">
         <span>{title}</span>
         <strong>{value}</strong>
-        {change ? <small className={change.startsWith('-') ? 'text-danger' : 'text-success'}>{change}</small> : null}
+        {change ? (
+          <small
+            className={
+              changeTone === 'muted'
+                ? 'text-muted'
+                : changeTone === 'danger'
+                  ? 'text-danger'
+                  : changeTone === 'success'
+                    ? 'text-success'
+                    : change.startsWith('-')
+                      ? 'text-danger'
+                      : 'text-success'
+            }
+          >
+            {change}
+          </small>
+        ) : null}
       </div>
     </article>
   );

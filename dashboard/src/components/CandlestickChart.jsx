@@ -2,6 +2,7 @@ import React, { memo, useMemo, useState } from 'react';
 
 function CandlestickChart({
   candles = [],
+  sessionSlots = [],
   width = 920,
   height = 360,
   showGrid = true,
@@ -22,27 +23,18 @@ function CandlestickChart({
 
     const high = Math.max(...candles.map((c) => c.high));
     const low = Math.min(...candles.map((c) => c.low));
-
     const range = Math.max(high - low, 1);
-
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
-
-    const slotWidth = chartWidth / candles.length;
-
-    const bodyWidth = Math.max(
-      4,
-      Math.min(18, slotWidth * 0.58)
-    );
-
-    const toY = (value) =>
-      padding.top + ((high - value) / range) * chartHeight;
-
-    const step = Math.max(1, Math.ceil(candles.length / 6));
-
-    const labelIndexes = candles
+    const axisSlots = sessionSlots.length ? sessionSlots : candles.map((candle) => candle.label);
+    const totalSlots = Math.max(axisSlots.length, candles.length);
+    const slotWidth = chartWidth / totalSlots;
+    const bodyWidth = Math.max(4, Math.min(18, slotWidth * 0.58));
+    const toY = (value) => padding.top + ((high - value) / range) * chartHeight;
+    const step = Math.max(1, Math.ceil(axisSlots.length / 6));
+    const labelIndexes = axisSlots
       .map((_, i) => i)
-      .filter((i) => i % step === 0 || i === candles.length - 1);
+      .filter((i) => i % step === 0 || i === axisSlots.length - 1);
 
     const priceLevels = Array.from({ length: 5 }, (_, i) => {
       const value = high - (range / 4) * i;
@@ -54,18 +46,14 @@ function CandlestickChart({
     });
 
     return {
-      high,
-      low,
-      range,
-      chartWidth,
-      chartHeight,
       slotWidth,
       bodyWidth,
       toY,
       labelIndexes,
       priceLevels,
+      axisSlots,
     };
-  }, [candles, width, height]);
+  }, [candles, sessionSlots, width, height]);
 
   if (!candles.length || !chart) {
     return (
@@ -98,7 +86,6 @@ function CandlestickChart({
           fill="#020617"
         />
 
-        {/* Grid + Price Labels */}
         {showGrid &&
           chart.priceLevels.map((level, index) => (
             <g key={index}>
@@ -124,30 +111,17 @@ function CandlestickChart({
             </g>
           ))}
 
-        {/* Candles */}
         {candles.map((candle, index) => {
-          const x =
-            padding.left +
-            chart.slotWidth * index +
-            chart.slotWidth / 2;
-
+          const slotIndex = Number.isInteger(candle.slotIndex) ? candle.slotIndex : index;
+          const x = padding.left + chart.slotWidth * slotIndex + chart.slotWidth / 2;
           const openY = chart.toY(candle.open);
           const closeY = chart.toY(candle.close);
           const highY = chart.toY(candle.high);
           const lowY = chart.toY(candle.low);
-
           const bullish = candle.close >= candle.open;
-
-          const color = bullish
-            ? '#22C55E'
-            : '#EF4444';
-
+          const color = bullish ? '#22C55E' : '#EF4444';
           const bodyTop = Math.min(openY, closeY);
-
-          const bodyHeight = Math.max(
-            Math.abs(openY - closeY),
-            2
-          );
+          const bodyHeight = Math.max(Math.abs(openY - closeY), 2);
 
           return (
             <g
@@ -156,7 +130,6 @@ function CandlestickChart({
               onMouseLeave={() => setHovered(null)}
               style={{ cursor: 'pointer' }}
             >
-              {/* Wick */}
               <line
                 x1={x}
                 x2={x}
@@ -167,18 +140,13 @@ function CandlestickChart({
                 strokeLinecap="round"
               />
 
-              {/* Candle Body */}
               <rect
                 x={x - chart.bodyWidth / 2}
                 y={bodyTop}
                 width={chart.bodyWidth}
                 height={bodyHeight}
                 rx="2"
-                fill={
-                  bullish
-                    ? 'rgba(34,197,94,0.25)'
-                    : 'rgba(239,68,68,0.25)'
-                }
+                fill={bullish ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}
                 stroke={color}
                 strokeWidth="1.5"
               />
@@ -186,12 +154,8 @@ function CandlestickChart({
           );
         })}
 
-        {/* Time Labels */}
         {chart.labelIndexes.map((index) => {
-          const x =
-            padding.left +
-            chart.slotWidth * index +
-            chart.slotWidth / 2;
+          const x = padding.left + chart.slotWidth * index + chart.slotWidth / 2;
 
           return (
             <text
@@ -202,13 +166,12 @@ function CandlestickChart({
               fontSize="11"
               fill="#94A3B8"
             >
-              {candles[index]?.label}
+              {chart.axisSlots[index]}
             </text>
           );
         })}
       </svg>
 
-      {/* Tooltip */}
       {hovered && (
         <div
           className="absolute pointer-events-none z-10 rounded-xl border border-slate-700 bg-slate-900/95 px-3 py-2 text-xs shadow-2xl backdrop-blur"

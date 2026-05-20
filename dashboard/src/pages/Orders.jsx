@@ -13,17 +13,31 @@ function Orders() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const { data } = await api.get('/orders');
-        setOrders(data.orders);
-      } finally {
+  const fetchOrders = async (withSpinner = false) => {
+    try {
+      if (withSpinner) {
+        setLoading(true);
+      }
+
+      const { data } = await api.get('/orders');
+      setOrders(data.orders);
+    } finally {
+      if (withSpinner) {
         setLoading(false);
       }
-    };
+    }
+  };
 
-    fetchOrders();
+  useEffect(() => {
+    fetchOrders(true);
+
+    const timer = window.setInterval(() => {
+      fetchOrders(false);
+    }, 12000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
   }, []);
 
   const filteredOrders = useMemo(() => {
@@ -50,25 +64,28 @@ function Orders() {
   return (
     <div className="page-stack">
       <section className="panel-card">
-        <div className="filter-tabs">
-          {filters.map((filter) => (
-            <button
-              key={filter}
-              type="button"
-              className={`tab-pill ${activeFilter === filter ? 'active' : ''}`}
-              onClick={() => setActiveFilter(filter)}
-            >
-              {filter === 'all'
-                ? 'All'
-                : filter === 'buy'
-                  ? 'Buy'
-                  : filter === 'sell'
-                    ? 'Sell'
-                    : filter === 'today'
-                      ? 'Today'
-                      : 'This Week'}
-            </button>
-          ))}
+        <div className="panel-head">
+          <div className="filter-tabs">
+            {filters.map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                className={`tab-pill ${activeFilter === filter ? 'active' : ''}`}
+                onClick={() => setActiveFilter(filter)}
+              >
+                {filter === 'all'
+                  ? 'All'
+                  : filter === 'buy'
+                    ? 'Buy'
+                    : filter === 'sell'
+                      ? 'Sell'
+                      : filter === 'today'
+                        ? 'Today'
+                        : 'This Week'}
+              </button>
+            ))}
+          </div>
+          <span className="live-pill">Orders auto-refresh</span>
         </div>
 
         {!filteredOrders.length ? (
@@ -85,6 +102,7 @@ function Orders() {
                   <th>Qty</th>
                   <th>Price</th>
                   <th>Total</th>
+                  <th>Realized P&L</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -106,6 +124,9 @@ function Orders() {
                     <td>{order.qty}</td>
                     <td>{formatINR(order.price)}</td>
                     <td>{formatINR(order.qty * order.price)}</td>
+                    <td className={Number(order.realizedPnl || 0) >= 0 ? 'text-success' : 'text-danger'}>
+                      {Number(order.realizedPnl || 0) === 0 ? 'N/A' : formatINR(order.realizedPnl)}
+                    </td>
                     <td>
                       <span className={`pill-badge badge-${order.status}`}>
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}

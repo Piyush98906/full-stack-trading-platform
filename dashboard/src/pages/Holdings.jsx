@@ -11,17 +11,31 @@ function Holdings() {
   const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
 
-  useEffect(() => {
-    const fetchHoldings = async () => {
-      try {
-        const { data } = await api.get('/holdings');
-        setHoldings(data.holdings);
-      } finally {
+  const fetchHoldings = async (withSpinner = false) => {
+    try {
+      if (withSpinner) {
+        setLoading(true);
+      }
+
+      const { data } = await api.get('/holdings');
+      setHoldings(data.holdings);
+    } finally {
+      if (withSpinner) {
         setLoading(false);
       }
-    };
+    }
+  };
 
-    fetchHoldings();
+  useEffect(() => {
+    fetchHoldings(true);
+
+    const timer = window.setInterval(() => {
+      fetchHoldings(false);
+    }, 12000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
   }, []);
 
   const sortedHoldings = useMemo(() => {
@@ -103,11 +117,11 @@ function Holdings() {
           <strong>{formatINR(summary.current)}</strong>
         </div>
         <div className="stat-card">
-          <span>Total P&amp;L</span>
+          <span>Total P&L</span>
           <strong className={summary.pnl >= 0 ? 'text-success' : 'text-danger'}>{formatINR(summary.pnl)}</strong>
         </div>
         <div className="stat-card">
-          <span>Day P&amp;L</span>
+          <span>Day P&L</span>
           <strong className={summary.dayPnl >= 0 ? 'text-success' : 'text-danger'}>{formatINR(summary.dayPnl)}</strong>
         </div>
       </section>
@@ -118,9 +132,12 @@ function Holdings() {
             <span className="section-label">Portfolio Table</span>
             <h3>All holdings</h3>
           </div>
-          <button className="button button-secondary" onClick={exportCsv} type="button">
-            Export CSV
-          </button>
+          <div className="panel-actions">
+            <span className="live-pill">Live values auto-refresh</span>
+            <button className="button button-secondary" onClick={exportCsv} type="button">
+              Export CSV
+            </button>
+          </div>
         </div>
 
         {!holdings.length ? (
@@ -136,8 +153,8 @@ function Holdings() {
                   <th><button type="button" onClick={() => toggleSort('avg')}>Avg Price</button></th>
                   <th><button type="button" onClick={() => toggleSort('price')}>LTP</button></th>
                   <th>Current Value</th>
-                  <th>P&amp;L (₹)</th>
-                  <th>P&amp;L (%)</th>
+                  <th>P&L (INR)</th>
+                  <th>P&L (%)</th>
                   <th>Day Change</th>
                 </tr>
               </thead>

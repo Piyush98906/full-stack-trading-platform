@@ -1,13 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  BarElement,
-  CategoryScale,
-  Chart as ChartJS,
-  LinearScale,
-  Tooltip,
-  Legend
-} from 'chart.js';
-import { Bar } from 'react-chartjs-2';
 import { useNavigate } from 'react-router-dom';
 import KPICard from '../components/KPICard';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -18,7 +9,21 @@ import { formatCompact, formatINR } from '../utils/format';
 import { formatDashboardDate } from '../utils/market';
 import { useAuth } from '../context/AuthContext';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+const quickFeatures = [
+  { code: 'IPO', title: 'IPO Tracker', text: 'Upcoming issues, allotment windows, and simple offer notes.' },
+  { code: 'ETF', title: 'ETF Basket', text: 'Placeholder shelf for index, gold, debt, and thematic ETFs.' },
+  { code: 'SIP', title: 'Stock SIP', text: 'Recurring investing ideas for beginners building discipline.' },
+  { code: 'BND', title: 'Bonds', text: 'Government and corporate bond discovery section placeholder.' },
+  { code: 'EV', title: 'Events', text: 'Results, dividends, splits, and other market-moving calendars.' }
+];
+
+const getIstDateKey = (value) =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date(value));
 
 function DashboardHome() {
   const navigate = useNavigate();
@@ -26,6 +31,8 @@ function DashboardHome() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [holdings, setHoldings] = useState([]);
+  const [positions, setPositions] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [funds, setFunds] = useState(null);
   const [marketOverview, setMarketOverview] = useState({
     topGainers: [],
@@ -34,58 +41,73 @@ function DashboardHome() {
     indices: []
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
+  const fetchDashboardData = async (withSpinner = false) => {
+    try {
+      if (withSpinner) {
         setLoading(true);
-        const [holdingsResponse, fundsResponse, marketResponse] = await Promise.all([
-          api.get('/holdings'),
-          api.get('/funds'),
-          api.get('/stocks/market-overview')
-        ]);
-        setHoldings(holdingsResponse.data.holdings);
-        setFunds(fundsResponse.data);
-        setMarketOverview(marketResponse.data);
-      } finally {
+      }
+
+      const [holdingsResponse, positionsResponse, ordersResponse, fundsResponse, marketResponse] = await Promise.all([
+        api.get('/holdings'),
+        api.get('/positions'),
+        api.get('/orders'),
+        api.get('/funds'),
+        api.get('/stocks/market-overview')
+      ]);
+
+      setHoldings(holdingsResponse.data.holdings);
+      setPositions(positionsResponse.data.positions);
+      setOrders(ordersResponse.data.orders);
+      setFunds(fundsResponse.data);
+      setMarketOverview(marketResponse.data);
+    } finally {
+      if (withSpinner) {
         setLoading(false);
       }
-    };
+    }
+  };
 
-    fetchData();
+  useEffect(() => {
+    fetchDashboardData(true);
+
+    const timer = window.setInterval(() => {
+      fetchDashboardData(false);
+    }, 12000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
   }, []);
 
   const metrics = useMemo(() => {
-    const invested = holdings.reduce((sum, item) => sum + item.avg * item.qty, 0);
-    const current = holdings.reduce((sum, item) => sum + item.price * item.qty, 0);
-    const pnl = current - invested;
-    const dayPnl = holdings.reduce((sum, item) => {
+    const holdingsInvested = holdings.reduce((sum, item) => sum + item.avg * item.qty, 0);
+    const holdingsCurrent = holdings.reduce((sum, item) => sum + item.price * item.qty, 0);
+    const holdingsPnl = holdingsCurrent - holdingsInvested;
+    const positionsCurrent = positions.reduce((sum, item) => sum + item.price * item.qty, 0);
+    const positionsDayPnl = positions.reduce((sum, item) => {
       const dayPercent = Number(String(item.day).replace('%', ''));
       return sum + (item.price * item.qty * dayPercent) / 100;
     }, 0);
+    const holdingsDayPnl = holdings.reduce((sum, item) => {
+      const dayPercent = Number(String(item.day).replace('%', ''));
+      return sum + (item.price * item.qty * dayPercent) / 100;
+    }, 0);
+    const todayKey = getIstDateKey(new Date());
+    const realizedToday = orders.reduce((sum, order) => {
+      if (order.status !== 'executed' || Number(order.realizedPnl || 0) === 0) {
+        return sum;
+      }
+
+      return getIstDateKey(order.createdAt) === todayKey ? sum + Number(order.realizedPnl || 0) : sum;
+    }, 0);
 
     return {
-      invested,
-      current,
-      pnl,
-      dayPnl
+      portfolioValue: holdingsCurrent + positionsCurrent,
+      pnl: holdingsPnl,
+      dayPnl: holdingsDayPnl + positionsDayPnl + realizedToday,
+      realizedToday
     };
-  }, [holdings]);
-
-  const chartData = useMemo(() => {
-    const combined = [...marketOverview.topGainers.slice(0, 4), ...marketOverview.topLosers.slice(0, 4)];
-
-    return {
-      labels: combined.map((item) => item.symbol),
-      datasets: [
-        {
-          label: 'Day Change (%)',
-          data: combined.map((item) => item.change),
-          backgroundColor: combined.map((item) => (item.change >= 0 ? '#16A34A' : '#DC2626')),
-          borderRadius: 8
-        }
-      ]
-    };
-  }, [marketOverview]);
+  }, [holdings, positions, orders]);
 
   if (loading) {
     return <LoadingSpinner label="Loading your dashboard..." />;
@@ -98,12 +120,13 @@ function DashboardHome() {
           <h2 className="page-heading">Good morning, {user?.name}</h2>
           <p className="page-subtitle">{formatDashboardDate()}</p>
         </div>
+        <span className="live-pill">Live quotes auto-refresh every 12 seconds</span>
       </section>
 
       <section className="kpi-grid">
         <KPICard
           title="Total Portfolio Value"
-          value={formatCompact(metrics.current)}
+          value={formatCompact(metrics.portfolioValue)}
           change={formatINR(metrics.pnl)}
           icon="PV"
           tone="primary"
@@ -112,7 +135,8 @@ function DashboardHome() {
         <KPICard
           title="Today's P&L"
           value={formatINR(metrics.dayPnl)}
-          change={metrics.dayPnl >= 0 ? '+In profit' : '-In loss'}
+          change={metrics.realizedToday ? `Closed trades ${formatINR(metrics.realizedToday)}` : 'Includes open and closed trades'}
+          changeTone={metrics.realizedToday ? (metrics.realizedToday >= 0 ? 'success' : 'danger') : 'muted'}
           icon="PL"
           tone={metrics.dayPnl >= 0 ? 'success' : 'danger'}
           onClick={() => navigate('/summary')}
@@ -120,7 +144,8 @@ function DashboardHome() {
         <KPICard
           title="Total Holdings"
           value={String(holdings.length)}
-          change="View your portfolio"
+          change={`${positions.length} open positions`}
+          changeTone="muted"
           icon="HD"
           tone="warning"
           onClick={() => navigate('/holdings')}
@@ -129,6 +154,7 @@ function DashboardHome() {
           title="Available Funds"
           value={formatCompact(funds?.available || 0)}
           change="Manage funds"
+          changeTone="muted"
           icon="IN"
           tone="primary"
           onClick={() => navigate('/funds')}
@@ -136,29 +162,24 @@ function DashboardHome() {
       </section>
 
       <section className="content-grid">
-        <article className="panel-card chart-panel wide-panel">
+        <article className="panel-card wide-panel">
           <div className="panel-head">
             <div>
-              <span className="section-label">Market Action</span>
-              <h3>Top movers of the day</h3>
+              <span className="section-label">Explore More</span>
+              <h3>Upcoming beginner-friendly modules</h3>
             </div>
+            <span className="text-muted">Placeholder features for your project demo</span>
           </div>
 
-          {marketOverview.topGainers.length || marketOverview.topLosers.length ? (
-            <Bar
-              data={chartData}
-              options={{
-                responsive: true,
-                plugins: { legend: { display: false } },
-                scales: {
-                  x: { grid: { display: false } },
-                  y: { grid: { color: 'rgba(0,0,0,0.05)' } }
-                }
-              }}
-            />
-          ) : (
-            <EmptyState title="No market data found" description="Market movers will show up here." />
-          )}
+          <div className="feature-grid">
+            {quickFeatures.map((feature) => (
+              <div className="feature-tile" key={feature.code}>
+                <span className="feature-icon">{feature.code}</span>
+                <strong>{feature.title}</strong>
+                <p>{feature.text}</p>
+              </div>
+            ))}
+          </div>
         </article>
 
         <article className="panel-card">
@@ -197,7 +218,7 @@ function DashboardHome() {
               <h3>Strongest names today</h3>
             </div>
           </div>
-          {marketOverview.topGainers.map((stock) => (
+          {marketOverview.topGainers.length ? marketOverview.topGainers.map((stock) => (
             <button className="mini-row mini-row-button" key={stock.symbol} onClick={() => openStockDetail(stock)} type="button">
               <div>
                 <strong>{stock.symbol}</strong>
@@ -208,7 +229,7 @@ function DashboardHome() {
                 <small className="text-success">+{stock.change.toFixed(2)}%</small>
               </div>
             </button>
-          ))}
+          )) : <EmptyState title="No market data found" description="Top gainers will show up here." />}
         </article>
 
         <article className="panel-card">
@@ -218,7 +239,7 @@ function DashboardHome() {
               <h3>Weakest names today</h3>
             </div>
           </div>
-          {marketOverview.topLosers.map((stock) => (
+          {marketOverview.topLosers.length ? marketOverview.topLosers.map((stock) => (
             <button className="mini-row mini-row-button" key={stock.symbol} onClick={() => openStockDetail(stock)} type="button">
               <div>
                 <strong>{stock.symbol}</strong>
@@ -229,7 +250,7 @@ function DashboardHome() {
                 <small className="text-danger">{stock.change.toFixed(2)}%</small>
               </div>
             </button>
-          ))}
+          )) : <EmptyState title="No market data found" description="Top losers will show up here." />}
         </article>
 
         <article className="panel-card">
@@ -239,7 +260,7 @@ function DashboardHome() {
               <h3>Most active opportunities</h3>
             </div>
           </div>
-          {marketOverview.topIntraday.map((stock) => (
+          {marketOverview.topIntraday.length ? marketOverview.topIntraday.map((stock) => (
             <button className="mini-row mini-row-button" key={stock.symbol} onClick={() => openStockDetail(stock)} type="button">
               <div>
                 <strong>{stock.symbol}</strong>
@@ -254,7 +275,7 @@ function DashboardHome() {
                 </small>
               </div>
             </button>
-          ))}
+          )) : <EmptyState title="No market data found" description="Intraday leaders will show up here." />}
         </article>
       </section>
     </div>

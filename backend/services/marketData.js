@@ -28,6 +28,28 @@ const normalizeExchange = (value) => String(value || 'NSE').trim().toUpperCase()
 
 const cloneStock = (stock) => ({ ...stock });
 
+const buildSimulatedQuote = (stock) => {
+  const seed = normalizeSymbol(stock.symbol)
+    .split('')
+    .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const timeBucket = Math.floor(Date.now() / 15000);
+  const movement = Math.sin((seed + timeBucket) / 4.8) * 0.0042;
+  const drift = Math.cos((seed + timeBucket) / 7.3) * 0.0011;
+  const previousClose = Number((stock.price / (1 + Number(stock.change || 0) / 100)).toFixed(2)) || Number(stock.price || 0);
+  const lastPrice = Number((Number(stock.price || 0) * (1 + movement + drift)).toFixed(2));
+  const changePercent = previousClose
+    ? Number((((lastPrice - previousClose) / previousClose) * 100).toFixed(2))
+    : Number(stock.change || 0);
+
+  return {
+    lastPrice,
+    changePercent,
+    volume: Number(stock.volume || 0) + ((seed + timeBucket) % 1200),
+    instrumentKey: stock.instrumentKey || '',
+    source: 'simulated'
+  };
+};
+
 const mapWithConcurrency = async (items, concurrency, iteratee) => {
   const results = new Array(items.length);
   let cursor = 0;
@@ -162,7 +184,16 @@ const resolveStockInput = async (input = {}, options = {}) => {
 
 const mergeQuoteIntoStock = (stock, quote) => {
   if (!quote || !quote.lastPrice) {
-    return cloneStock(stock);
+    const simulatedQuote = buildSimulatedQuote(stock);
+
+    return {
+      ...stock,
+      change: simulatedQuote.changePercent,
+      price: simulatedQuote.lastPrice,
+      volume: simulatedQuote.volume,
+      instrumentKey: simulatedQuote.instrumentKey,
+      source: simulatedQuote.source
+    };
   }
 
   return {
@@ -272,19 +303,16 @@ const getLivePerformanceForStock = async (stock) => {
 const buildStockDetailsPayload = async (input = {}) => {
   const resolvedStock = await resolveStockInput(input, { allowSearch: true });
 
-  if (!resolvedStock || !resolvedStock.instrumentKey || !isUpstoxReady()) {
+  if (!resolvedStock) {
     return null;
   }
 
   const liveQuote = await getLiveQuoteForStock(resolvedStock, { allowSearch: false });
-
-  if (!liveQuote) {
-    return null;
-  }
-
   const liveStock = mergeQuoteIntoStock(resolvedStock, liveQuote);
   const details = buildStockDetailsFromStock(liveStock);
-  const livePerformance = await getLivePerformanceForStock(liveStock);
+  const livePerformance = liveStock.instrumentKey && isUpstoxReady()
+    ? await getLivePerformanceForStock(liveStock)
+    : null;
 
   if (livePerformance) {
     details.performance = {
@@ -293,14 +321,16 @@ const buildStockDetailsPayload = async (input = {}) => {
     };
   }
 
-  details.stats = {
-    ...details.stats,
-    lowerCircuit: liveQuote.lowerCircuitLimit || details.stats.lowerCircuit,
-    previousClose: liveQuote.previousClose || details.stats.previousClose,
-    todayHigh: liveQuote.high || details.stats.todayHigh,
-    todayLow: liveQuote.low || details.stats.todayLow,
-    upperCircuit: liveQuote.upperCircuitLimit || details.stats.upperCircuit
-  };
+  if (liveQuote) {
+    details.stats = {
+      ...details.stats,
+      lowerCircuit: liveQuote.lowerCircuitLimit || details.stats.lowerCircuit,
+      previousClose: liveQuote.previousClose || details.stats.previousClose,
+      todayHigh: liveQuote.high || details.stats.todayHigh,
+      todayLow: liveQuote.low || details.stats.todayLow,
+      upperCircuit: liveQuote.upperCircuitLimit || details.stats.upperCircuit
+    };
+  }
 
   return details;
 };

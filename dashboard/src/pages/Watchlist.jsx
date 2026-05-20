@@ -15,26 +15,65 @@ function Watchlist() {
   const [selectedTrade, setSelectedTrade] = useState(null);
   const [availableFunds, setAvailableFunds] = useState(0);
 
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem(WATCHLIST_KEY) || '[]');
-    setWatchlist(stored);
-
-    const fetchFunds = async () => {
-      try {
-        const { data } = await api.get('/funds');
-        setAvailableFunds(data.available);
-      } catch (error) {
-        setAvailableFunds(0);
-      }
-    };
-
-    fetchFunds();
-  }, []);
-
   const persistWatchlist = (items) => {
     localStorage.setItem(WATCHLIST_KEY, JSON.stringify(items));
     setWatchlist(items);
   };
+
+  const fetchFunds = async () => {
+    try {
+      const { data } = await api.get('/funds');
+      setAvailableFunds(data.available);
+    } catch (error) {
+      setAvailableFunds(0);
+    }
+  };
+
+  const refreshWatchlist = async (items = watchlist) => {
+    if (!items.length) {
+      return;
+    }
+
+    const refreshed = await Promise.all(
+      items.map(async (item) => {
+        try {
+          const { data } = await api.get(`/stocks/quote/${encodeURIComponent(item.symbol)}`, {
+            params: {
+              instrumentKey: item.instrumentKey,
+              exchange: item.exchange,
+              name: item.name,
+              sector: item.sector
+            }
+          });
+          return data.stock;
+        } catch (error) {
+          return item;
+        }
+      })
+    );
+
+    persistWatchlist(refreshed);
+  };
+
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem(WATCHLIST_KEY) || '[]');
+    setWatchlist(stored);
+    fetchFunds();
+  }, []);
+
+  useEffect(() => {
+    if (!watchlist.length) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      refreshWatchlist();
+    }, 10000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [watchlist]);
 
   const addToWatchlist = async (stock) => {
     const stockKey = getWatchlistKey(stock);
@@ -65,28 +104,6 @@ function Watchlist() {
     persistWatchlist(watchlist.filter((item) => getWatchlistKey(item) !== getWatchlistKey(stockToRemove)));
   };
 
-  const refreshWatchlist = async () => {
-    const refreshed = await Promise.all(
-      watchlist.map(async (item) => {
-        try {
-          const { data } = await api.get(`/stocks/quote/${encodeURIComponent(item.symbol)}`, {
-            params: {
-              instrumentKey: item.instrumentKey,
-              exchange: item.exchange,
-              name: item.name,
-              sector: item.sector
-            }
-          });
-          return data.stock;
-        } catch (error) {
-          return item;
-        }
-      })
-    );
-
-    persistWatchlist(refreshed);
-  };
-
   const sortedWatchlist = useMemo(
     () => [...watchlist].sort((a, b) => a.symbol.localeCompare(b.symbol)),
     [watchlist]
@@ -100,9 +117,7 @@ function Watchlist() {
             <span className="section-label">Discover Stocks</span>
             <h3>Your watchlist</h3>
           </div>
-          <button className="button button-secondary" onClick={refreshWatchlist} type="button">
-            Refresh Quotes
-          </button>
+          <span className="live-pill">Auto-refreshing every 10 seconds</span>
         </div>
 
         <StockSearch onSelect={addToWatchlist} />
@@ -139,8 +154,15 @@ function Watchlist() {
                 </span>
               </div>
 
-              <div className="sparkline-placeholder">
-                <span />
+              <div className="watchlist-meta-grid">
+                <div className="watchlist-meta-card">
+                  <span>Sector</span>
+                  <strong>{stock.sector || 'Equity'}</strong>
+                </div>
+                <div className="watchlist-meta-card">
+                  <span>Feed</span>
+                  <strong>{stock.source === 'upstox' ? 'Live' : 'Demo Live'}</strong>
+                </div>
               </div>
 
               <div className="watchlist-actions">
@@ -185,7 +207,7 @@ function Watchlist() {
         stock={selectedTrade?.stock}
         mode={selectedTrade?.mode}
         onClose={() => setSelectedTrade(null)}
-        onSuccess={refreshWatchlist}
+        onSuccess={() => refreshWatchlist()}
         availableFunds={availableFunds}
       />
     </div>

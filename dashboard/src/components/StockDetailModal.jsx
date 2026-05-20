@@ -18,25 +18,31 @@ function StockDetailModal() {
   const [availableFunds, setAvailableFunds] = useState(0);
   const [tradeMode, setTradeMode] = useState('');
 
-  const fetchDetails = async (stock) => {
+  const fetchDetails = async (stock, withSpinner = true) => {
+    if (!stock?.symbol) {
+      return;
+    }
+
     try {
-      setLoading(true);
+      if (withSpinner) {
+        setLoading(true);
+      }
       setError('');
       const params = {};
 
-      if (stock?.instrumentKey) {
+      if (stock.instrumentKey) {
         params.instrumentKey = stock.instrumentKey;
       }
 
-      if (stock?.exchange) {
+      if (stock.exchange) {
         params.exchange = stock.exchange;
       }
 
-      if (stock?.name) {
+      if (stock.name) {
         params.name = stock.name;
       }
 
-      if (stock?.sector) {
+      if (stock.sector) {
         params.sector = stock.sector;
       }
 
@@ -50,7 +56,9 @@ function StockDetailModal() {
       setDetails(null);
       setError(requestError.response?.data?.message || 'Unable to load this stock right now.');
     } finally {
-      setLoading(false);
+      if (withSpinner) {
+        setLoading(false);
+      }
     }
   };
 
@@ -63,7 +71,21 @@ function StockDetailModal() {
       return;
     }
 
-    fetchDetails(selectedStock);
+    fetchDetails(selectedStock, true);
+  }, [selectedStock]);
+
+  useEffect(() => {
+    if (!selectedStock?.symbol) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      fetchDetails(selectedStock, false);
+    }, 12000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
   }, [selectedStock]);
 
   const activeSeries = details?.performance?.[activeRange];
@@ -73,7 +95,6 @@ function StockDetailModal() {
   const stockChange = details?.stock?.change ?? (details?.stock?.price && details?.stats?.previousClose
     ? Number((((details.stock.price - details.stats.previousClose) / details.stats.previousClose) * 100).toFixed(2))
     : 0);
-  const activeChange = activeSeries?.change ?? 0;
 
   if (!selectedStock?.symbol) {
     return null;
@@ -88,7 +109,7 @@ function StockDetailModal() {
               <span className="section-label">Stock Snapshot</span>
               <h2>
                 {selectedStock.symbol}
-                {details?.stock ? <span className="text-muted"> · {details.stock.exchange}</span> : null}
+                {details?.stock ? <span className="text-muted">{` · ${details.stock.exchange}`}</span> : null}
               </h2>
               {details?.company ? <p className="stock-subtitle">{details.company.companyName}</p> : null}
             </div>
@@ -174,14 +195,18 @@ function StockDetailModal() {
                       <span className="section-label">Previous Performance</span>
                       <h3>{activeRange} candlestick chart</h3>
                     </div>
-                    <span className={activeChange >= 0 ? 'pill-badge badge-executed' : 'pill-badge badge-cancelled'}>
-                      {activeChange >= 0 ? '+' : ''}
-                      {activeChange.toFixed(2)}%
+                    <span className="pill-badge badge-pending">
+                      {activeRange === '1D' ? '10 min session view' : `${activeRange} trend view`}
                     </span>
                   </div>
                   <div style={{ flex: 1, position: 'relative', minHeight: '320px' }}>
-                    <CandlestickChart candles={candleSeries} />
+                    <CandlestickChart candles={candleSeries} sessionSlots={activeSeries?.sessionSlots} />
                   </div>
+                  {activeRange === '1D' ? (
+                    <p className="chart-caption">
+                      Future 10-minute session slots stay empty until live market time reaches them.
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -271,7 +296,7 @@ function StockDetailModal() {
         stock={details?.stock}
         mode={tradeMode || 'buy'}
         onClose={() => setTradeMode('')}
-        onSuccess={() => fetchDetails(details?.stock || selectedStock)}
+        onSuccess={() => fetchDetails(details?.stock || selectedStock, false)}
         availableFunds={availableFunds}
       />
     </>

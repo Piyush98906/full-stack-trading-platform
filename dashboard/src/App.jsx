@@ -20,6 +20,7 @@ import Funds from './pages/Funds';
 import Summary from './pages/Summary';
 import Profile from './pages/Profile';
 import AdminPanel from './pages/AdminPanel';
+import Learn from './pages/Learn';
 
 
 ChartJS.register(...registerables);
@@ -60,6 +61,7 @@ function App() {
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/funds" element={<Funds />} />
                 <Route path="/summary" element={<Summary />} />
+                <Route path="/learn" element={<Learn />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
 

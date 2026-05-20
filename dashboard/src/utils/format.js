@@ -10,11 +10,11 @@ export const formatCompact = (num) => {
   const value = Number(num || 0);
 
   if (value >= 1e7) {
-    return `₹${(value / 1e7).toFixed(2)}Cr`;
+    return `\u20B9${(value / 1e7).toFixed(2)}Cr`;
   }
 
   if (value >= 1e5) {
-    return `₹${(value / 1e5).toFixed(2)}L`;
+    return `\u20B9${(value / 1e5).toFixed(2)}L`;
   }
 
   return formatINR(value);
@@ -32,7 +32,7 @@ export const formatPercent = (num) => {
 };
 
 export const getAvatarColor = (name = 'Trader') => {
-  const palette = ['#4F46E5', '#0EA5E9', '#F97316', '#16A34A', '#DC2626', '#8B5CF6'];
+  const palette = ['#F59E0B', '#38BDF8', '#F97316', '#22C55E', '#F87171', '#A78BFA'];
   const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return palette[hash % palette.length];
 };

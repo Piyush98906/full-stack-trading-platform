@@ -49,9 +49,8 @@ function StockSearch({ onSelect }) {
   return (
     <div className="search-shell">
       <div className="search-input-wrap">
-        <span className="search-icon" style={{ marginRight: "8px" }}>  <i class="fa fa-search"></i></span>
+        <span className="search-icon" style={{ marginRight: '8px' }}><i className="fa fa-search" /></span>
         <input
-        
           className="search-input"
           type="text"
           value={query}

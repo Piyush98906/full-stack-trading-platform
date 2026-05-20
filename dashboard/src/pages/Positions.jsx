@@ -12,18 +12,31 @@ function Positions() {
   const [positions, setPositions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchPositions = async () => {
+  const fetchPositions = async (withSpinner = false) => {
     try {
-      setLoading(true);
+      if (withSpinner) {
+        setLoading(true);
+      }
+
       const { data } = await api.get('/positions');
       setPositions(data.positions);
     } finally {
-      setLoading(false);
+      if (withSpinner) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchPositions();
+    fetchPositions(true);
+
+    const timer = window.setInterval(() => {
+      fetchPositions(false);
+    }, 12000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
   }, []);
 
   const summary = useMemo(() => {
@@ -45,7 +58,7 @@ function Positions() {
         product: position.product
       });
       addToast('Position closed successfully!', 'success');
-      fetchPositions();
+      fetchPositions(false);
     } catch (error) {
       addToast(error.response?.data?.message || 'Failed to close position', 'error');
     }
@@ -63,7 +76,7 @@ function Positions() {
           <strong>{summary.count}</strong>
         </div>
         <div className="stat-card">
-          <span>Total P&amp;L</span>
+          <span>Total P&L</span>
           <strong className={summary.totalPnl >= 0 ? 'text-success' : 'text-danger'}>
             {formatINR(summary.totalPnl)}
           </strong>
@@ -76,6 +89,7 @@ function Positions() {
             <span className="section-label">Open Positions</span>
             <h3>Intraday and carry-forward exposures</h3>
           </div>
+          <span className="live-pill">Live values auto-refresh</span>
         </div>
 
         {!positions.length ? (
@@ -90,7 +104,7 @@ function Positions() {
                   <th>Qty</th>
                   <th>Avg</th>
                   <th>LTP</th>
-                  <th>P&amp;L</th>
+                  <th>P&L</th>
                   <th>Day Change</th>
                   <th>Status</th>
                   <th>Action</th>

@@ -9,6 +9,7 @@ const { getLiveQuoteForStock, resolveStockInput } = require('../services/marketD
 const router = express.Router();
 
 const toSignedPercent = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+const toCurrencyNumber = (value) => Number(Number(value || 0).toFixed(2));
 
 const isMarketOpen = () => {
   const now = new Date();
@@ -156,6 +157,7 @@ const reducePosition = async ({ userId, symbol, qty, executionPrice, product, da
     throw new Error('Insufficient position quantity for sell order');
   }
 
+  const realizedPnl = toCurrencyNumber((executionPrice - position.avg) * qty);
   position.qty -= qty;
   const performance = recomputePerformance(position.avg, executionPrice, dayChange);
   position.price = executionPrice;
@@ -165,11 +167,11 @@ const reducePosition = async ({ userId, symbol, qty, executionPrice, product, da
 
   if (position.qty === 0) {
     await position.deleteOne();
-    return null;
+    return { position: null, realizedPnl };
   }
 
   await position.save();
-  return position;
+  return { position, realizedPnl };
 };
 
 router.get('/', protect, async (req, res) => {
@@ -227,6 +229,7 @@ router.post('/new', protect, async (req, res) => {
     const marketOpen = isMarketOpen();
     const status = marketOpen && orderType === 'market' ? 'executed' : 'pending';
     const total = Number((executionPrice * normalizedQty).toFixed(2));
+    let realizedPnl = 0;
 
     const user = await User.findById(req.user._id);
     if (!user) {
@@ -272,7 +275,7 @@ router.post('/new', protect, async (req, res) => {
             dayChange: liveQuote.day
           });
         } else {
-          await reducePosition({
+          const positionResult = await reducePosition({
             userId: user._id,
             symbol: stock.symbol,
             qty: normalizedQty,
@@ -280,6 +283,7 @@ router.post('/new', protect, async (req, res) => {
             product,
             dayChange: liveQuote.day
           });
+          realizedPnl = positionResult.realizedPnl;
         }
 
         user.funds = Number((user.funds + total).toFixed(2));
@@ -305,6 +309,7 @@ router.post('/new', protect, async (req, res) => {
       product,
       status,
       exchange: stock.exchange,
+      realizedPnl,
       userId: user._id
     });
 

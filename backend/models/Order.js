@@ -10,6 +10,7 @@ const orderSchema = new mongoose.Schema(
     product: { type: String, enum: ['MIS', 'CNC', 'NRML'], default: 'CNC' },
     status: { type: String, enum: ['executed', 'pending', 'cancelled'], default: 'executed' },
     exchange: { type: String, default: 'NSE' },
+    realizedPnl: { type: Number, default: 0 },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
   },
   {

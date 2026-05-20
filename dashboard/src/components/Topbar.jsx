@@ -14,6 +14,7 @@ const titles = {
   '/orders': 'Orders',
   '/funds': 'Funds',
   '/summary': 'Summary',
+  '/learn': 'Learn',
   '/profile': 'Profile',
   '/admin': 'Admin Panel'
 };
@@ -22,7 +23,7 @@ function Topbar({ onMenuClick }) {
   const { pathname } = useLocation();
   const { user } = useAuth();
   const { openStockDetail } = useStockDetail();
-  const marketStatus = getMarketStatus();
+  const [marketStatus, setMarketStatus] = useState(() => getMarketStatus());
   const title = titles[pathname] || 'Trading Platform';
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query);
@@ -70,7 +71,17 @@ function Topbar({ onMenuClick }) {
       }
     };
 
+    setMarketStatus(getMarketStatus());
     fetchIndices();
+
+    const timer = window.setInterval(() => {
+      setMarketStatus(getMarketStatus());
+      fetchIndices();
+    }, 12000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
   }, []);
 
   const handleResultClick = (stock) => {
@@ -96,7 +107,7 @@ function Topbar({ onMenuClick }) {
 
         <div className="topbar-search">
           <div className="search-input-wrap">
-            <span className="search-icon"> <i class="fa fa-search"></i></span>
+            <span className="search-icon"><i className="fa fa-search" /></span>
             <input
               type="text"
               value={query}
@@ -152,11 +163,11 @@ function Topbar({ onMenuClick }) {
       <div className="indices-strip">
         {indices.slice(0, 4).map((index) => (
           <button className="index-chip index-chip-button" key={index.symbol} onClick={() => openStockDetail(index)} type="button">
-            <span>{index.symbol}  </span>
-            <strong>{Number(index.price ?? index.value ?? 0).toLocaleString('en-IN')} </strong>
+            <span>{index.symbol}</span>
+            <strong>{Number(index.price ?? index.value ?? 0).toLocaleString('en-IN')}</strong>
             <small className={index.change >= 0 ? 'text-success' : 'text-danger'}>
               {index.change >= 0 ? '+' : ''}
-              {index.change.toFixed(2)}%  
+              {index.change.toFixed(2)}%
             </small>
           </button>
         ))}

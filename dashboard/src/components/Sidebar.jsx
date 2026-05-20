@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { frontendHomeUrl } from '../utils/appConfig';
 
@@ -10,21 +10,16 @@ const navItems = [
   { label: 'Orders', path: '/orders', icon: 'OR' },
   { label: 'Funds', path: '/funds', icon: 'IN' },
   { label: 'Summary', path: '/summary', icon: 'SM' },
+  { label: 'Learn', path: '/learn', icon: 'ED' },
   { label: 'Profile', path: '/profile', icon: 'PF' }
 ];
 
 function Sidebar({ open, onClose }) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const visibleItems = isAdmin 
+  const visibleItems = isAdmin
     ? [{ label: 'Dashboard', path: '/dashboard', icon: 'DB' }]
     : navItems;
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   return (
     <>
@@ -60,7 +55,7 @@ function Sidebar({ open, onClose }) {
         </div>
 
         {isAdmin && (
-          <div className="sidebar-section" >
+          <div className="sidebar-section">
             <span className="sidebar-label" style={{ marginBottom: '16px' }}>Administration</span>
             <NavLink
               to="/admin"
@@ -68,24 +63,28 @@ function Sidebar({ open, onClose }) {
               onClick={onClose}
               title="Admin Panel"
             >
-              <span className="sidebar-icon" >AD</span>
+              <span className="sidebar-icon">AD</span>
               <span>Admin Panel</span>
             </NavLink>
           </div>
         )}
 
-        <div className="sidebar-section" style={{ marginTop: 'auto' }}>
-          <button
-            className="sidebar-link"
-            onClick={handleLogout}
-            type="button"
-            title="Logout"
-            style={{ width: '100%', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}
-          >
-            <span className="sidebar-icon">LO</span>
-            <span>Logout</span>
-          </button>
-        </div>
+        {!isAdmin ? (
+          <div className="sidebar-section sidebar-insight" style={{ marginTop: 'auto' }}>
+            <span className="sidebar-label">Beginner Help</span>
+            <strong>Start with the basics</strong>
+            <p>Use the guide page to learn order types, products, risk checks, and a simple trading workflow.</p>
+            <NavLink
+              to="/learn"
+              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+              onClick={onClose}
+              title="Open Learn"
+            >
+              <span className="sidebar-icon">GO</span>
+              <span>Open Guide</span>
+            </NavLink>
+          </div>
+        ) : null}
       </aside>
 
       {open && <button className="sidebar-backdrop" onClick={onClose} type="button" />}
