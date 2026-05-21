@@ -1,5 +1,5 @@
 import { startTransition, useDeferredValue, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useStockDetail } from '../context/StockDetailContext';
 import api from '../utils/api';
@@ -20,6 +20,7 @@ const titles = {
 };
 
 function Topbar({ onMenuClick }) {
+  const navigate = useNavigate();
   const { pathname } = useLocation();
   const { user } = useAuth();
   const { openStockDetail } = useStockDetail();
@@ -77,7 +78,7 @@ function Topbar({ onMenuClick }) {
     const timer = window.setInterval(() => {
       setMarketStatus(getMarketStatus());
       fetchIndices();
-    }, 500);
+    }, 250);
 
     return () => {
       window.clearInterval(timer);
@@ -148,7 +149,7 @@ function Topbar({ onMenuClick }) {
           <span className={`status-pill ${marketStatus.isOpen ? 'status-positive' : 'status-warning'}`}>
             {marketStatus.label}
           </span>
-          <div className="avatar-pill">
+          <button className="avatar-pill avatar-pill-button" onClick={() => navigate('/profile')} type="button">
             <div className="avatar-circle" style={{ backgroundColor: getAvatarColor(user?.name) }}>
               {(user?.name || 'T').charAt(0).toUpperCase()}
             </div>
@@ -156,7 +157,7 @@ function Topbar({ onMenuClick }) {
               <strong>{user?.name}</strong>
               <small>{formatINR(user?.funds || 0)}</small>
             </div>
-          </div>
+          </button>
         </div>
       </div>
 

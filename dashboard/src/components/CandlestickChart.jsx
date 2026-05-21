@@ -4,7 +4,7 @@ function CandlestickChart({
   candles = [],
   sessionSlots = [],
   width = 920,
-  height = 360,
+  height = 380,
   showGrid = true,
   showPriceLabels = true,
   className = '',
@@ -12,43 +12,53 @@ function CandlestickChart({
   const [hovered, setHovered] = useState(null);
 
   const padding = {
-    top: 20,
+    top: 24,
     right: 64,
-    bottom: 42,
-    left: 20,
+    bottom: 32,
+    left: 24,
   };
 
   const chart = useMemo(() => {
     if (!candles.length) return null;
 
-    const high = Math.max(...candles.map((c) => c.high));
-    const low = Math.min(...candles.map((c) => c.low));
-    const range = Math.max(high - low, 1);
+    const priceHigh = Math.max(...candles.map((c) => c.high));
+    const priceLow = Math.min(...candles.map((c) => c.low));
+    const priceRange = Math.max(priceHigh - priceLow, 1);
+    const maxVolume = Math.max(...candles.map((c) => Number(c.volume || 0)), 1);
     const chartWidth = width - padding.left - padding.right;
-    const chartHeight = height - padding.top - padding.bottom;
+    const priceHeight = height - padding.top - padding.bottom - 76;
+    const volumeTop = padding.top + priceHeight + 24;
+    const volumeHeight = 52;
     const axisSlots = sessionSlots.length ? sessionSlots : candles.map((candle) => candle.label);
     const totalSlots = Math.max(axisSlots.length, candles.length);
     const slotWidth = chartWidth / totalSlots;
-    const bodyWidth = Math.max(4, Math.min(18, slotWidth * 0.58));
-    const toY = (value) => padding.top + ((high - value) / range) * chartHeight;
-    const step = Math.max(1, Math.ceil(axisSlots.length / 6));
+    const bodyWidth = Math.max(4, Math.min(12, slotWidth * 0.58));
+    const toY = (value) => padding.top + ((priceHigh - value) / priceRange) * priceHeight;
+    const toVolumeHeight = (value) => (Number(value || 0) / maxVolume) * volumeHeight;
+    const labelStep = Math.max(1, Math.ceil(axisSlots.length / 6));
     const labelIndexes = axisSlots
       .map((_, i) => i)
-      .filter((i) => i % step === 0 || i === axisSlots.length - 1);
-
+      .filter((i) => i % labelStep === 0 || i === axisSlots.length - 1);
     const priceLevels = Array.from({ length: 5 }, (_, i) => {
-      const value = high - (range / 4) * i;
+      const value = priceHigh - (priceRange / 4) * i;
 
       return {
         value,
-        y: padding.top + (chartHeight / 4) * i,
+        y: padding.top + (priceHeight / 4) * i,
       };
     });
 
     return {
+      priceHigh,
+      priceLow,
+      chartWidth,
+      priceHeight,
+      volumeTop,
+      volumeHeight,
       slotWidth,
       bodyWidth,
       toY,
+      toVolumeHeight,
       labelIndexes,
       priceLevels,
       axisSlots,
@@ -57,59 +67,54 @@ function CandlestickChart({
 
   if (!candles.length || !chart) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
-        No candle data available
+      <div className="chart-shell">
+        <div className="empty-state">No candle data available</div>
       </div>
     );
   }
 
   return (
-    <div
-      className={`relative w-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 ${className}`}
-    >
+    <div className={`chart-shell ${className}`}>
       <svg
         viewBox={`0 0 ${width} ${height}`}
         width="100%"
         height="100%"
         preserveAspectRatio="xMidYMid meet"
         role="img"
-        aria-label="Candlestick chart"
+        aria-label="Candlestick chart with volume"
       >
         <title>Candlestick Chart</title>
-        <desc>OHLC stock market candlestick visualization</desc>
+        <desc>OHLC stock market candlestick visualization with volume bars and crosshair.</desc>
 
-        <rect
-          x="0"
-          y="0"
-          width={width}
-          height={height}
-          fill="#020617"
-        />
+        <rect x="0" y="0" width={width} height={height} fill="#0A0D14" />
 
         {showGrid &&
-          chart.priceLevels.map((level, index) => (
-            <g key={index}>
+          chart.priceLevels.map((level) => (
+            <g key={level.value}>
               <line
                 x1={padding.left}
                 x2={width - padding.right}
                 y1={level.y}
                 y2={level.y}
-                stroke="rgba(148,163,184,0.14)"
+                stroke="rgba(152,162,179,0.14)"
                 strokeWidth="1"
               />
-
               {showPriceLabels && (
-                <text
-                  x={width - padding.right + 8}
-                  y={level.y + 4}
-                  fontSize="11"
-                  fill="#94A3B8"
-                >
+                <text x={width - padding.right + 8} y={level.y + 4} fontSize="11" fill="#98A2B3">
                   {level.value.toFixed(2)}
                 </text>
               )}
             </g>
           ))}
+
+        <line
+          x1={padding.left}
+          x2={width - padding.right}
+          y1={chart.volumeTop - 12}
+          y2={chart.volumeTop - 12}
+          stroke="rgba(152,162,179,0.18)"
+          strokeWidth="1"
+        />
 
         {candles.map((candle, index) => {
           const slotIndex = Number.isInteger(candle.slotIndex) ? candle.slotIndex : index;
@@ -119,53 +124,68 @@ function CandlestickChart({
           const highY = chart.toY(candle.high);
           const lowY = chart.toY(candle.low);
           const bullish = candle.close >= candle.open;
-          const color = bullish ? '#22C55E' : '#EF4444';
+          const color = bullish ? '#12B76A' : '#F04438';
+          const mutedColor = bullish ? 'rgba(18,183,106,0.34)' : 'rgba(240,68,56,0.34)';
           const bodyTop = Math.min(openY, closeY);
           const bodyHeight = Math.max(Math.abs(openY - closeY), 2);
+          const volumeHeight = chart.toVolumeHeight(candle.volume || 0);
 
           return (
             <g
               key={`${candle.time}-${index}`}
-              onMouseEnter={() => setHovered({ candle, x })}
+              onMouseEnter={() => setHovered({ candle, x, y: closeY })}
               onMouseLeave={() => setHovered(null)}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: 'crosshair' }}
             >
-              <line
-                x1={x}
-                x2={x}
-                y1={highY}
-                y2={lowY}
-                stroke={color}
-                strokeWidth="1.5"
-                strokeLinecap="round"
+              <rect
+                x={x - chart.bodyWidth / 2}
+                y={chart.volumeTop + chart.volumeHeight - volumeHeight}
+                width={chart.bodyWidth}
+                height={Math.max(volumeHeight, 1)}
+                rx="1"
+                fill={mutedColor}
               />
-
+              <line x1={x} x2={x} y1={highY} y2={lowY} stroke={color} strokeWidth="1.25" />
               <rect
                 x={x - chart.bodyWidth / 2}
                 y={bodyTop}
                 width={chart.bodyWidth}
                 height={bodyHeight}
                 rx="2"
-                fill={bullish ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}
+                fill={bullish ? 'rgba(18,183,106,0.24)' : 'rgba(240,68,56,0.24)'}
                 stroke={color}
-                strokeWidth="1.5"
+                strokeWidth="1.25"
               />
             </g>
           );
         })}
 
+        {hovered && (
+          <g pointerEvents="none">
+            <line
+              x1={hovered.x}
+              x2={hovered.x}
+              y1={padding.top}
+              y2={height - padding.bottom}
+              stroke="rgba(238,241,247,0.34)"
+              strokeDasharray="4 4"
+            />
+            <line
+              x1={padding.left}
+              x2={width - padding.right}
+              y1={hovered.y}
+              y2={hovered.y}
+              stroke="rgba(238,241,247,0.24)"
+              strokeDasharray="4 4"
+            />
+          </g>
+        )}
+
         {chart.labelIndexes.map((index) => {
           const x = padding.left + chart.slotWidth * index + chart.slotWidth / 2;
 
           return (
-            <text
-              key={index}
-              x={x}
-              y={height - 14}
-              textAnchor="middle"
-              fontSize="11"
-              fill="#94A3B8"
-            >
+            <text key={index} x={x} y={height - 12} textAnchor="middle" fontSize="11" fill="#697386">
               {chart.axisSlots[index]}
             </text>
           );
@@ -174,22 +194,18 @@ function CandlestickChart({
 
       {hovered && (
         <div
-          className="absolute pointer-events-none z-10 rounded-xl border border-slate-700 bg-slate-900/95 px-3 py-2 text-xs shadow-2xl backdrop-blur"
+          className="chart-tooltip"
           style={{
-            left: hovered.x - 50,
+            left: Math.min(Math.max(hovered.x + 12, 12), width - 180),
             top: 12,
           }}
         >
-          <div className="mb-1 font-semibold text-white">
-            {hovered.candle.label}
-          </div>
-
-          <div className="space-y-1 text-slate-300">
-            <div>Open: {hovered.candle.open}</div>
-            <div>High: {hovered.candle.high}</div>
-            <div>Low: {hovered.candle.low}</div>
-            <div>Close: {hovered.candle.close}</div>
-          </div>
+          <strong>{hovered.candle.label}</strong>
+          <div>O {hovered.candle.open}</div>
+          <div>H {hovered.candle.high}</div>
+          <div>L {hovered.candle.low}</div>
+          <div>C {hovered.candle.close}</div>
+          <div>Vol {Number(hovered.candle.volume || 0).toLocaleString('en-IN')}</div>
         </div>
       )}
     </div>
