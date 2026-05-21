@@ -34,6 +34,7 @@ function DashboardHome() {
   const [positions, setPositions] = useState([]);
   const [orders, setOrders] = useState([]);
   const [funds, setFunds] = useState(null);
+  const [selectedFeature, setSelectedFeature] = useState(null);
   const [marketOverview, setMarketOverview] = useState({
     topGainers: [],
     topLosers: [],
@@ -72,7 +73,7 @@ function DashboardHome() {
 
     const timer = window.setInterval(() => {
       fetchDashboardData(false);
-    }, 500);
+    }, 250);
 
     return () => {
       window.clearInterval(timer);
@@ -120,7 +121,6 @@ function DashboardHome() {
           <h2 className="page-heading">Good morning, {user?.name}</h2>
           <p className="page-subtitle">{formatDashboardDate()}</p>
         </div>
-        <span className="live-pill">Live quotes auto-refresh every 12 seconds</span>
       </section>
 
       <section className="kpi-grid">
@@ -135,7 +135,7 @@ function DashboardHome() {
         <KPICard
           title="Today's P&L"
           value={formatINR(metrics.dayPnl)}
-          change={metrics.realizedToday ? `Closed trades ${formatINR(metrics.realizedToday)}` : 'Includes open and closed trades'}
+          change={metrics.realizedToday ? `Realized ${formatINR(metrics.realizedToday)}` : 'Day movement'}
           changeTone={metrics.realizedToday ? (metrics.realizedToday >= 0 ? 'success' : 'danger') : 'muted'}
           icon="PL"
           tone={metrics.dayPnl >= 0 ? 'success' : 'danger'}
@@ -144,7 +144,7 @@ function DashboardHome() {
         <KPICard
           title="Total Holdings"
           value={String(holdings.length)}
-          change={`${positions.length} open positions`}
+          change={`${positions.length} positions`}
           changeTone="muted"
           icon="HD"
           tone="warning"
@@ -166,18 +166,17 @@ function DashboardHome() {
           <div className="panel-head">
             <div>
               <span className="section-label">Explore More</span>
-              <h3>Upcoming beginner-friendly modules</h3>
+              <h3>Upcoming modules</h3>
             </div>
-            <span className="text-muted">Placeholder features for your project demo</span>
           </div>
 
           <div className="feature-grid">
             {quickFeatures.map((feature) => (
-              <div className="feature-tile" key={feature.code}>
+              <button className="feature-tile feature-tile-button" key={feature.code} onClick={() => setSelectedFeature(feature)} type="button">
                 <span className="feature-icon">{feature.code}</span>
                 <strong>{feature.title}</strong>
                 <p>{feature.text}</p>
-              </div>
+              </button>
             ))}
           </div>
         </article>
@@ -278,6 +277,26 @@ function DashboardHome() {
           )) : <EmptyState title="No market data found" description="Intraday leaders will show up here." />}
         </article>
       </section>
+
+      {selectedFeature ? (
+        <div className="modal-overlay" onClick={() => setSelectedFeature(null)}>
+          <div className="feature-modal" onClick={(event) => event.stopPropagation()}>
+            <span className="section-label">Future Module</span>
+            <h3>{selectedFeature.title}</h3>
+            <p className="page-subtitle">
+              This module is planned for a future version of the platform. The card is active so you can
+              showcase the roadmap without making it look like plain placeholder text.
+            </p>
+            <div className="feature-modal-chip-row">
+              <span className="pill-badge badge-pending">Work in progress</span>
+              <span className="pill-badge badge-executed">Planned roadmap item</span>
+            </div>
+            <button className="button button-primary" onClick={() => setSelectedFeature(null)} type="button">
+              Close
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

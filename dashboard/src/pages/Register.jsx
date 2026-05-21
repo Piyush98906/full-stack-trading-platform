@@ -162,9 +162,11 @@ function Register() {
 
           {error ? <div className="form-error">{error}</div> : null}
 
-          <button className="button button-primary full-width" type="submit" disabled={submitting}>
-            {submitting ? 'Creating Account...' : 'Register'}
-          </button>
+          <div className="auth-action-row">
+            <button className="button button-primary full-width" type="submit" disabled={submitting}>
+              {submitting ? 'Creating Account...' : 'Register'}
+            </button>
+          </div>
 
           <p className="auth-switch">
             Already have an account? <Link to="/login">Sign in</Link>

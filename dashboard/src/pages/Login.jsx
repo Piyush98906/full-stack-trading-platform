@@ -99,9 +99,11 @@ function Login() {
 
           {error ? <div className="form-error">{error}</div> : null}
 
-          <button className="button button-primary full-width" type="submit" disabled={submitting}>
-            {submitting ? 'Signing In...' : 'Login'}
-          </button>
+          <div className="auth-action-row">
+            <button className="button button-primary full-width" type="submit" disabled={submitting}>
+              {submitting ? 'Signing In...' : 'Login'}
+            </button>
+          </div>
 
           <p className="auth-switch">
             New here? <Link to="/register">Create an account</Link>

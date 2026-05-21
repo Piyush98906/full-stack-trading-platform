@@ -46,7 +46,7 @@ function Learn() {
           <span className="section-label">Beginner Guide</span>
           <h2 className="page-heading">Learn how to trade before you click buy or sell</h2>
           <p className="page-subtitle">
-            This demo section is designed for first-time users who want to understand market basics,
+            This section is designed for first-time users who want to understand market basics,
             platform flow, and safe trade execution habits.
           </p>
         </div>

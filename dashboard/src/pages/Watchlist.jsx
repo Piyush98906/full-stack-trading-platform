@@ -4,7 +4,7 @@ import EmptyState from '../components/EmptyState';
 import StockSearch from '../components/StockSearch';
 import { useStockDetail } from '../context/StockDetailContext';
 import api from '../utils/api';
-import { formatINR } from '../utils/format';
+import { formatCompact, formatINR } from '../utils/format';
 
 const WATCHLIST_KEY = 'tp_watchlist';
 const getWatchlistKey = (item) => item.instrumentKey || `${item.symbol}-${item.exchange}`;
@@ -68,7 +68,7 @@ function Watchlist() {
 
     const timer = window.setInterval(() => {
       refreshWatchlist();
-    }, 500);
+    }, 250);
 
     return () => {
       window.clearInterval(timer);
@@ -111,94 +111,96 @@ function Watchlist() {
 
   return (
     <div className="page-stack">
-      <div className="panel-card">
+      <section className="panel-card">
         <div className="panel-head">
-          <div style={{ marginBottom: '16px' }}>
-            <span className="section-label">Discover Stocks</span>
-            <h3>Your watchlist</h3>
+          <div>
+            <span className="section-label">Watchlist</span>
+            <h3>Market scanner</h3>
           </div>
-          <span className="live-pill">Auto-refreshing every 10 seconds</span>
         </div>
 
         <StockSearch onSelect={addToWatchlist} />
-      </div>
+      </section>
 
-      <section className="watchlist-grid">
-        {sortedWatchlist.length === 0 ? (
-          <div className="panel-card">
-            <EmptyState
-              title="No watchlist items yet"
-              description="Search by stock symbol or company name and add names to your watchlist."
-            />
+      <section className="watchlist-table-panel">
+        <div className="watchlist-toolbar">
+          <div>
+            <span className="section-label">Trading Desk</span>
+            <h3>Saved instruments</h3>
           </div>
+          <button className="button button-secondary" onClick={() => refreshWatchlist()} type="button">
+            Refresh
+          </button>
+        </div>
+
+        {sortedWatchlist.length === 0 ? (
+          <EmptyState
+            title="No watchlist items yet"
+            description="Search by stock symbol or company name and add names to your watchlist."
+          />
         ) : (
-          sortedWatchlist.map((stock) => (
-            <article
-              className="watchlist-card watchlist-clickable"
-              key={getWatchlistKey(stock)}
-              onClick={() => openStockDetail(stock)}
-            >
-              <div className="watchlist-head">
-                <div>
-                  <strong>{stock.symbol}</strong>
-                  <p>{stock.name}</p>
-                </div>
-                <span className="exchange-badge">{stock.exchange}</span>
-              </div>
-
-              <div className="watchlist-price">
-                <h3>{formatINR(stock.price)}</h3>
-                <span className={stock.change >= 0 ? 'text-success' : 'text-danger'}>
-                  {stock.change >= 0 ? '+' : ''}
-                  {stock.change.toFixed(2)}%
-                </span>
-              </div>
-
-              <div className="watchlist-meta-grid">
-                <div className="watchlist-meta-card">
-                  <span>Sector</span>
-                  <strong>{stock.sector || 'Equity'}</strong>
-                </div>
-                <div className="watchlist-meta-card">
-                  <span>Feed</span>
-                  <strong>{stock.source === 'upstox' ? 'Live' : 'Demo Live'}</strong>
-                </div>
-              </div>
-
-              <div className="watchlist-actions">
-                <button
-                  className="button button-primary"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setSelectedTrade({ stock, mode: 'buy' });
-                  }}
-                  type="button"
-                >
-                  Buy
-                </button>
-                <button
-                  className="button button-danger"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setSelectedTrade({ stock, mode: 'sell' });
-                  }}
-                  type="button"
-                >
-                  Sell
-                </button>
-                <button
-                  className="button button-ghost"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    removeFromWatchlist(stock);
-                  }}
-                  type="button"
-                >
-                  Remove
-                </button>
-              </div>
-            </article>
-          ))
+          <div className="table-wrap">
+            <table className="watchlist-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th className="num-cell">Price</th>
+                  <th className="num-cell">Change</th>
+                  <th className="num-cell">Volume</th>
+                  <th>Feed</th>
+                  <th className="num-cell">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedWatchlist.map((stock) => (
+                  <tr key={getWatchlistKey(stock)}>
+                    <td>
+                      <div className="watchlist-symbol">
+                        <button className="watchlist-symbol-button" onClick={() => openStockDetail(stock)} type="button">
+                          {stock.symbol}
+                        </button>
+                        <small>{stock.name}</small>
+                      </div>
+                    </td>
+                    <td className="num-cell">{formatINR(stock.price)}</td>
+                    <td className={`num-cell ${stock.change >= 0 ? 'text-success' : 'text-danger'}`}>
+                      {stock.change >= 0 ? '+' : ''}
+                      {stock.change.toFixed(2)}%
+                    </td>
+                    <td className="num-cell">{formatCompact(stock.volume || 0)}</td>
+                    <td>
+                      <span className="exchange-badge">{stock.source === 'upstox' ? 'Upstox' : 'Market Feed'}</span>
+                    </td>
+                    <td>
+                      <div className="watchlist-actions watchlist-actions-end">
+                        <button
+                          className="button button-primary"
+                          onClick={() => setSelectedTrade({ stock, mode: 'buy' })}
+                          type="button"
+                        >
+                          Buy
+                        </button>
+                        <button
+                          className="button button-danger"
+                          onClick={() => setSelectedTrade({ stock, mode: 'sell' })}
+                          type="button"
+                        >
+                          Sell
+                        </button>
+                        <button
+                          className="button button-ghost"
+                          onClick={() => removeFromWatchlist(stock)}
+                          type="button"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
