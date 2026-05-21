@@ -10,8 +10,7 @@ const navItems = [
   { label: 'Orders', path: '/orders', icon: 'OR' },
   { label: 'Funds', path: '/funds', icon: 'IN' },
   { label: 'Summary', path: '/summary', icon: 'SM' },
-  { label: 'Learn', path: '/learn', icon: 'ED' },
-  { label: 'Profile', path: '/profile', icon: 'PF' }
+  { label: 'Learn', path: '/learn', icon: 'ED' }
 ];
 
 function Sidebar({ open, onClose }) {
@@ -56,7 +55,7 @@ function Sidebar({ open, onClose }) {
 
         {isAdmin && (
           <div className="sidebar-section">
-            <span className="sidebar-label" style={{ marginBottom: '16px' }}>Administration</span>
+            <span className="sidebar-label sidebar-label-spaced">Administration</span>
             <NavLink
               to="/admin"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
@@ -69,22 +68,6 @@ function Sidebar({ open, onClose }) {
           </div>
         )}
 
-        {!isAdmin ? (
-          <div className="sidebar-section sidebar-insight" style={{ marginTop: 'auto' }}>
-            <span className="sidebar-label">Beginner Help</span>
-            <strong>Start with the basics</strong>
-            <p>Use the guide page to learn order types, products, risk checks, and a simple trading workflow.</p>
-            <NavLink
-              to="/learn"
-              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onClose}
-              title="Open Learn"
-            >
-              <span className="sidebar-icon">GO</span>
-              <span>Open Guide</span>
-            </NavLink>
-          </div>
-        ) : null}
       </aside>
 
       {open && <button className="sidebar-backdrop" onClick={onClose} type="button" />}
