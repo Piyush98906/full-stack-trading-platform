@@ -31,7 +31,7 @@ function Holdings() {
 
     const timer = window.setInterval(() => {
       fetchHoldings(false);
-    }, 500);
+    }, 250);
 
     return () => {
       window.clearInterval(timer);
@@ -133,7 +133,6 @@ function Holdings() {
             <h3>All holdings</h3>
           </div>
           <div className="panel-actions">
-            <span className="live-pill">Live values auto-refresh</span>
             <button className="button button-secondary" onClick={exportCsv} type="button">
               Export CSV
             </button>

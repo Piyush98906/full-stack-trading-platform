@@ -32,7 +32,7 @@ function Positions() {
 
     const timer = window.setInterval(() => {
       fetchPositions(false);
-    }, 500);
+    }, 250);
 
     return () => {
       window.clearInterval(timer);
@@ -89,7 +89,6 @@ function Positions() {
             <span className="section-label">Open Positions</span>
             <h3>Intraday and carry-forward exposures</h3>
           </div>
-          <span className="live-pill">Live values auto-refresh</span>
         </div>
 
         {!positions.length ? (

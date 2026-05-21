@@ -81,17 +81,16 @@ function StockDetailModal() {
 
     const timer = window.setInterval(() => {
       fetchDetails(selectedStock, false);
-    }, 500);
+    }, 250);
 
     return () => {
       window.clearInterval(timer);
     };
   }, [selectedStock]);
 
-  const activeSeries = details?.performance?.[activeRange];
+  const activeSeries = details?.performance?.[activeRange] || details?.performance?.['1D'] || null;
   const candleSeries = activeSeries?.candles || [];
   const allowTrading = details?.stock?.sector !== 'Index';
-
   const stockChange = details?.stock?.change ?? (details?.stock?.price && details?.stats?.previousClose
     ? Number((((details.stock.price - details.stats.previousClose) / details.stats.previousClose) * 100).toFixed(2))
     : 0);
@@ -124,62 +123,21 @@ function StockDetailModal() {
             />
           ) : (
             <div className="stock-detail-body">
-              <div className="stock-hero">
+              <div className="stock-hero stock-hero-tight">
                 <div>
                   <strong className="stock-live-price">{formatINR(details.stock.price)}</strong>
                   <p className={stockChange >= 0 ? 'text-success' : 'text-danger'}>
                     {stockChange >= 0 ? '+' : ''}
-                    {stockChange.toFixed(2)}% today
+                    {stockChange.toFixed(2)}%
                   </p>
-                </div>
-                <div className="stock-stat-strip">
-                  <div className="stock-stat-card">
-                    <span>52W High</span>
-                    <strong>{formatINR(details.stats.week52High)}</strong>
-                  </div>
-                  <div className="stock-stat-card">
-                    <span>52W Low</span>
-                    <strong>{formatINR(details.stats.week52Low)}</strong>
-                  </div>
-                  <div className="stock-stat-card">
-                    <span>Prev Close</span>
-                    <strong>{formatINR(details.stats.previousClose)}</strong>
-                  </div>
-                  <div className="stock-stat-card">
-                    <span>Today High</span>
-                    <strong>{formatINR(details.stats.todayHigh)}</strong>
-                  </div>
-                  <div className="stock-stat-card">
-                    <span>Today Low</span>
-                    <strong>{formatINR(details.stats.todayLow)}</strong>
-                  </div>
-                  <div className="stock-stat-card">
-                    <span>Lot Size</span>
-                    <strong>{details.stats.lotSize}</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="stock-action-row">
-                <div className="tab-row">
-                  {ranges.map((range) => (
-                    <button
-                      key={range}
-                      type="button"
-                      className={`tab-pill ${activeRange === range ? 'active' : ''}`}
-                      onClick={() => setActiveRange(range)}
-                    >
-                      {range}
-                    </button>
-                  ))}
                 </div>
 
                 {allowTrading ? (
-                  <div className="stock-cta-buttons">
-                    <button className="button button-primary" onClick={() => setTradeMode('buy')} type="button">
+                  <div className="stock-cta-buttons stock-cta-spread">
+                    <button className="button button-primary stock-cta-button" onClick={() => setTradeMode('buy')} type="button">
                       Buy
                     </button>
-                    <button className="button button-danger" onClick={() => setTradeMode('sell')} type="button">
+                    <button className="button button-danger stock-cta-button" onClick={() => setTradeMode('sell')} type="button">
                       Sell
                     </button>
                   </div>
@@ -188,101 +146,135 @@ function StockDetailModal() {
                 )}
               </div>
 
-              {candleSeries.length ? (
-                <div className="panel-card stock-chart-card">
-                  <div className="stock-chart-head">
-                    <div>
-                      <span className="section-label">Previous Performance</span>
-                      <h3>{activeRange} candlestick chart</h3>
-                    </div>
-                    <span className="pill-badge badge-pending">
-                      {activeRange === '1D' ? '10 min session view' : `${activeRange} trend view`}
-                    </span>
+              <div className="panel-card stock-chart-card stock-chart-card-full">
+                <div className="stock-chart-head">
+                  <div className="tab-row">
+                    {ranges.map((range) => (
+                      <button
+                        key={range}
+                        type="button"
+                        className={`tab-pill ${activeRange === range ? 'active' : ''}`}
+                        onClick={() => setActiveRange(range)}
+                      >
+                        {range}
+                      </button>
+                    ))}
                   </div>
-                  <div style={{ flex: 1, position: 'relative', minHeight: '320px' }}>
-                    <CandlestickChart candles={candleSeries} sessionSlots={activeSeries?.sessionSlots} />
-                  </div>
-                  {activeRange === '1D' ? (
-                    <p className="chart-caption">
-                      Future 10-minute session slots stay empty until live market time reaches them.
-                    </p>
-                  ) : null}
                 </div>
-              ) : null}
+
+                <div className="stock-chart-frame">
+                  {candleSeries.length ? (
+                    <CandlestickChart candles={candleSeries} sessionSlots={activeSeries?.sessionSlots} />
+                  ) : (
+                    <EmptyState
+                      title="Chart unavailable"
+                      description="This time range is not available for the selected stock right now."
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="stock-metrics-grid">
+                <div className="stock-metric-tile">
+                  <span>52W High</span>
+                  <strong>{formatINR(details.stats.week52High)}</strong>
+                </div>
+                <div className="stock-metric-tile">
+                  <span>52W Low</span>
+                  <strong>{formatINR(details.stats.week52Low)}</strong>
+                </div>
+                <div className="stock-metric-tile">
+                  <span>Prev Close</span>
+                  <strong>{formatINR(details.stats.previousClose)}</strong>
+                </div>
+                <div className="stock-metric-tile">
+                  <span>Today High</span>
+                  <strong>{formatINR(details.stats.todayHigh)}</strong>
+                </div>
+                <div className="stock-metric-tile">
+                  <span>Today Low</span>
+                  <strong>{formatINR(details.stats.todayLow)}</strong>
+                </div>
+                <div className="stock-metric-tile">
+                  <span>Lot Size</span>
+                  <strong>{details.stats.lotSize}</strong>
+                </div>
+              </div>
 
               <div className="content-grid two-col stock-detail-grid">
-                <article className="panel-card">
+                <article className="panel-card stock-story-card">
                   <div className="panel-head">
                     <div>
-                      <span className="section-label">Company Details</span>
-                      <h3>Business overview</h3>
+                      <span className="section-label">Company Overview</span>
+                      <h3>{details.company.companyName}</h3>
                     </div>
                   </div>
                   <p className="stock-description">{details.company.description}</p>
-                  <div className="comparison-row">
-                    <span>Sector</span>
-                    <strong>{details.company.sector}</strong>
+                  <div className="stock-chip-row">
+                    <span className="pill-badge badge-buy">{details.company.sector}</span>
+                    <span className="pill-badge badge-executed">{details.company.headquarters}</span>
+                    <span className="pill-badge badge-pending">Founded {details.company.founded}</span>
                   </div>
-                  <div className="comparison-row">
-                    <span>Headquarters</span>
-                    <strong>{details.company.headquarters}</strong>
-                  </div>
-                  <div className="comparison-row">
-                    <span>Founded</span>
-                    <strong>{details.company.founded}</strong>
-                  </div>
-                  <div className="comparison-row">
-                    <span>Employees</span>
-                    <strong>{details.company.employees.toLocaleString('en-IN')}</strong>
-                  </div>
-                  <div className="comparison-row">
-                    <span>Website</span>
-                    <strong>{details.company.website.replace('https://', '')}</strong>
-                  </div>
-                  <div className="comparison-row">
-                    <span>Upper / Lower Circuit</span>
-                    <strong>
-                      {formatINR(details.stats.upperCircuit)} / {formatINR(details.stats.lowerCircuit)}
-                    </strong>
+                  <div className="stock-overview-grid">
+                    <div className="comparison-row">
+                      <span>Employees</span>
+                      <strong>{details.company.employees.toLocaleString('en-IN')}</strong>
+                    </div>
+                    <div className="comparison-row">
+                      <span>Website</span>
+                      <strong>{details.company.website.replace('https://', '')}</strong>
+                    </div>
+                    <div className="comparison-row">
+                      <span>Upper Circuit</span>
+                      <strong>{formatINR(details.stats.upperCircuit)}</strong>
+                    </div>
+                    <div className="comparison-row">
+                      <span>Lower Circuit</span>
+                      <strong>{formatINR(details.stats.lowerCircuit)}</strong>
+                    </div>
                   </div>
                 </article>
 
-                <article className="panel-card">
+                <article className="panel-card stock-story-card">
                   <div className="panel-head">
                     <div>
-                      <span className="section-label">Financials</span>
-                      <h3>Key metrics</h3>
+                      <span className="section-label">Financial Snapshot</span>
+                      <h3>Key fundamentals</h3>
                     </div>
                   </div>
-                  <div className="comparison-row">
-                    <span>Market Cap</span>
-                    <strong>{formatCompact(details.financials.marketCap)}</strong>
-                  </div>
-                  <div className="comparison-row">
-                    <span>P/E Ratio</span>
-                    <strong>{details.financials.peRatio}</strong>
-                  </div>
-                  <div className="comparison-row">
-                    <span>EPS</span>
-                    <strong>{details.financials.eps}</strong>
-                  </div>
-                  <div className="comparison-row">
-                    <span>Book Value</span>
-                    <strong>{formatINR(details.financials.bookValue)}</strong>
-                  </div>
-                  <div className="comparison-row">
-                    <span>Dividend Yield</span>
-                    <strong>{details.financials.dividendYield}%</strong>
-                  </div>
-                  <div className="comparison-row">
-                    <span>ROE / ROCE</span>
-                    <strong>
-                      {details.financials.roe}% / {details.financials.roce}%
-                    </strong>
-                  </div>
-                  <div className="comparison-row">
-                    <span>Debt to Equity</span>
-                    <strong>{details.financials.debtToEquity}</strong>
+                  <div className="stock-fundamentals-grid">
+                    <div className="stock-fundamentals-card">
+                      <span>Market Cap</span>
+                      <strong>{formatCompact(details.financials.marketCap)}</strong>
+                    </div>
+                    <div className="stock-fundamentals-card">
+                      <span>P/E Ratio</span>
+                      <strong>{details.financials.peRatio}</strong>
+                    </div>
+                    <div className="stock-fundamentals-card">
+                      <span>EPS</span>
+                      <strong>{details.financials.eps}</strong>
+                    </div>
+                    <div className="stock-fundamentals-card">
+                      <span>Book Value</span>
+                      <strong>{formatINR(details.financials.bookValue)}</strong>
+                    </div>
+                    <div className="stock-fundamentals-card">
+                      <span>Dividend Yield</span>
+                      <strong>{details.financials.dividendYield}%</strong>
+                    </div>
+                    <div className="stock-fundamentals-card">
+                      <span>Debt / Equity</span>
+                      <strong>{details.financials.debtToEquity}</strong>
+                    </div>
+                    <div className="stock-fundamentals-card">
+                      <span>ROE</span>
+                      <strong>{details.financials.roe}%</strong>
+                    </div>
+                    <div className="stock-fundamentals-card">
+                      <span>ROCE</span>
+                      <strong>{details.financials.roce}%</strong>
+                    </div>
                   </div>
                 </article>
               </div>

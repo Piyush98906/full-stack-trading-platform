@@ -33,7 +33,7 @@ function Orders() {
 
     const timer = window.setInterval(() => {
       fetchOrders(false);
-    }, 500);
+    }, 250);
 
     return () => {
       window.clearInterval(timer);
@@ -85,7 +85,6 @@ function Orders() {
               </button>
             ))}
           </div>
-          <span className="live-pill">Orders auto-refresh</span>
         </div>
 
         {!filteredOrders.length ? (
