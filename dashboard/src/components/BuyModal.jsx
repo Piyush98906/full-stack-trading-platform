@@ -40,7 +40,7 @@ function BuyModal({ open, stock, mode: initialMode = 'buy', onClose, onSuccess, 
     };
 
     fetchQuote();
-    const timer = window.setInterval(fetchQuote, 10000);
+    const timer = window.setInterval(fetchQuote, 500);
 
     return () => {
       window.clearInterval(timer);
