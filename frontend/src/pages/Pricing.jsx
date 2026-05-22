@@ -1,19 +1,19 @@
 const pricingTiers = [
   {
     name: 'Starter',
-    price: '₹0',
-    note: 'For demos and exploration',
-    features: ['Public site access', 'Dashboard walkthrough', 'Demo portfolio']
+    price: '\u20B90',
+    note: 'For first-time evaluation',
+    features: ['Public site access', 'Dashboard walkthrough', 'Portfolio preview']
   },
   {
     name: 'Trader',
-    price: '₹999/mo',
+    price: '\u20B9999/mo',
     note: 'For active retail traders',
     features: ['Portfolio analytics', 'Watchlist and order workflows', 'Funds and profile tools']
   },
   {
     name: 'Admin',
-    price: '₹2,499/mo',
+    price: '\u20B92,499/mo',
     note: 'For operators and internal teams',
     features: ['Full admin CRUD', 'System-wide order oversight', 'User and holding management']
   }
