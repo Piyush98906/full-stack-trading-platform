@@ -68,7 +68,7 @@ function Watchlist() {
 
     const timer = window.setInterval(() => {
       refreshWatchlist();
-    }, 250);
+    }, 500);
 
     return () => {
       window.clearInterval(timer);

@@ -73,7 +73,7 @@ function DashboardHome() {
 
     const timer = window.setInterval(() => {
       fetchDashboardData(false);
-    }, 250);
+    }, 500);
 
     return () => {
       window.clearInterval(timer);

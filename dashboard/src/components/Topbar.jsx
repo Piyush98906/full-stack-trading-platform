@@ -78,7 +78,7 @@ function Topbar({ onMenuClick }) {
     const timer = window.setInterval(() => {
       setMarketStatus(getMarketStatus());
       fetchIndices();
-    }, 250);
+    }, 500);
 
     return () => {
       window.clearInterval(timer);
