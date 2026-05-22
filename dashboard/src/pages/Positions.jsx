@@ -32,7 +32,7 @@ function Positions() {
 
     const timer = window.setInterval(() => {
       fetchPositions(false);
-    }, 250);
+    }, 500);
 
     return () => {
       window.clearInterval(timer);

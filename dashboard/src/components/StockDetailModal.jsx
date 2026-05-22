@@ -81,7 +81,7 @@ function StockDetailModal() {
 
     const timer = window.setInterval(() => {
       fetchDetails(selectedStock, false);
-    }, 250);
+    }, 500);
 
     return () => {
       window.clearInterval(timer);
