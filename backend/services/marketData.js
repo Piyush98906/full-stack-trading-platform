@@ -281,7 +281,7 @@ const searchStocks = async (query) => {
   );
 
   const externalMatches = isUpstoxReady()
-    ? await searchUpstoxInstruments(query, { records: 36 })
+    ? await searchUpstoxInstruments(query, { records: 30 })
     : [];
 
   const combined = dedupeStocks([...localMatches.map(cloneStock), ...externalMatches]).slice(0, 24);
