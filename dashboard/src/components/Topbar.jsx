@@ -14,7 +14,7 @@ const titles = {
   '/orders': 'Orders',
   '/funds': 'Funds',
   '/summary': 'Summary',
-  '/learn': 'Learn',
+  '/learn': 'Trade Academy',
   '/profile': 'Profile',
   '/admin': 'Admin Panel'
 };

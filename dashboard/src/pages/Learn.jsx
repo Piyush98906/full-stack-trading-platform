@@ -1,73 +1,98 @@
 const learningTracks = [
   {
-    title: '1. Start with the trend',
-    body: 'Check whether the stock is making higher highs, lower lows, or simply moving sideways. Trading with the broader trend usually gives beginners cleaner decisions.'
+    title: '1. Start with market structure',
+    body: 'Before taking any trade, decide whether the stock is trending up, trending down, or moving in a range. Beginners usually make better decisions when they stop forcing trades in unclear conditions.'
   },
   {
-    title: '2. Read support and resistance',
-    body: 'Support is the zone where buyers often step in, while resistance is where price can struggle. These levels help with entries, exits, and stop-loss placement.'
+    title: '2. Mark support and resistance',
+    body: 'Support is a price zone where buying interest often shows up, while resistance is where supply can slow the move. These levels help you choose entry, stop-loss, and target areas with logic.'
   },
   {
-    title: '3. Study volume with price',
-    body: 'A strong move with healthy volume is more believable than a price move happening on weak participation. Volume often confirms conviction.'
+    title: '3. Read price with volume',
+    body: 'A breakout with strong volume is generally healthier than a breakout on weak participation. Volume helps confirm whether large market participants are actually supporting the move.'
   },
   {
-    title: '4. Respect risk first',
-    body: 'Decide how much you are willing to lose before thinking about profit. Position sizing and stop-loss discipline are what keep traders in the game.'
+    title: '4. Respect trend and timeframe',
+    body: 'A stock can be bullish on a daily chart and weak on a five-minute chart at the same time. Always know which timeframe your trade idea belongs to before entering.'
   },
   {
-    title: '5. Build a trading journal',
-    body: 'Write down why you entered, where you exited, and what you felt. Good traders improve because they review patterns in their own behavior.'
+    title: '5. Plan risk before reward',
+    body: 'Good traders decide their stop-loss, quantity, and maximum acceptable loss before they think about profit. Capital protection is what keeps you consistent long enough to improve.'
+  },
+  {
+    title: '6. Review every trade',
+    body: 'Winning trades can still be poor decisions, and losing trades can still be disciplined. Reviewing your process helps you improve faster than only looking at P&L.'
   }
 ];
 
 const factorCards = [
-  ['Business quality', 'Look for understandable businesses with durable demand, good management reputation, and consistent execution.'],
-  ['Financial strength', 'Check revenue growth, profit growth, debt levels, return ratios, and whether the company converts profits into cash.'],
-  ['Sector tailwinds', 'A good stock becomes stronger when its whole sector is benefiting from demand, policy support, or improving sentiment.'],
-  ['Valuation discipline', 'Even strong companies can become risky if bought at overheated prices. Compare valuation with growth expectations.'],
-  ['Market structure', 'Observe trend, momentum, support, resistance, and delivery/volume behavior before chasing a move.'],
-  ['Upcoming triggers', 'Earnings, dividends, results, regulation, and management commentary can all change short-term stock behavior.']
+  ['Business quality', 'Prefer companies with understandable business models, strong market position, decent governance, and execution consistency.'],
+  ['Revenue and profit growth', 'Look for businesses that are able to grow sales and profits without depending only on short-term excitement or one-off events.'],
+  ['Debt and cash flow', 'High debt can increase risk when business slows down. Healthy operating cash flow gives a company more resilience.'],
+  ['Return ratios', 'ROE and ROCE help you understand how efficiently the company uses capital to generate profits.'],
+  ['Valuation', 'A great company bought at a very expensive level can still become a poor trade. Compare price with earnings, growth, and sector expectations.'],
+  ['Sector strength', 'Stocks become stronger when their entire sector is benefiting from policy support, demand growth, or improving sentiment.'],
+  ['Management and news flow', 'Promoter quality, commentary, governance, and corporate actions often affect conviction and price behavior.'],
+  ['Technical setup', 'Trend, consolidation, breakout zones, moving averages, and delivery/volume patterns help refine actual timing.']
+];
+
+const tradingStyles = [
+  ['Intraday trading', 'Trades opened and closed within the same session. Speed, discipline, and stop-loss execution matter a lot here.'],
+  ['Swing trading', 'Trades held for a few days to a few weeks to capture a broader move after a setup forms.'],
+  ['Positional trading', 'A longer holding period based on bigger trends, business conviction, or macro themes.'],
+  ['Investing', 'Focuses more on business quality, earnings growth, and long-term compounding rather than short-term price noise.']
 ];
 
 const tradingTerms = [
-  ['CNC', 'Cash and carry, usually used when you want to take delivery and move the stock into holdings.'],
-  ['MIS', 'Margin intraday square-off, designed for intraday trades that appear under positions.'],
-  ['NRML', 'Normal product type, commonly used for carry-forward style exposure depending on the instrument.'],
-  ['LTP', 'Last traded price, the most recent transaction price visible in the market.'],
-  ['Stop-loss', 'A predefined exit used to limit downside when the market moves against your view.'],
-  ['Risk-reward', 'The amount you are risking compared with the amount you expect to make on the trade.']
+  ['CNC', 'Cash and carry. Commonly used when you want to take delivery and move the stock into holdings.'],
+  ['MIS', 'Margin intraday square-off. Designed for intraday positions that are tracked in the positions section.'],
+  ['NRML', 'Normal product type. Used for carry-forward style exposure depending on the instrument and setup.'],
+  ['LTP', 'Last traded price, which is the latest transaction price available in the market.'],
+  ['Stop-loss', 'A predefined exit level used to limit downside when the trade goes against your view.'],
+  ['Risk-reward', 'The amount you are risking compared with the amount you aim to make if the trade works.'],
+  ['Breakout', 'When price moves above resistance or below support with intent, often supported by stronger volume.'],
+  ['Pullback', 'A temporary move against the main trend that can offer a more favorable entry if the trend stays intact.']
 ];
 
-const checklist = [
-  'Trade only when you can explain the setup in one or two sentences.',
-  'Avoid random entries in the middle of a volatile move.',
-  'Do not increase quantity just because the previous trade was profitable.',
-  'A small planned loss is normal; an unmanaged loss is the real problem.',
-  'Focus on consistency of process before consistency of profit.'
+const beginnerChecklist = [
+  'Can I explain this trade setup clearly in one or two sentences?',
+  'Do I know the exact stop-loss level before entering?',
+  'Am I taking this trade because of a setup, or because of fear of missing out?',
+  'Is the quantity small enough that one loss will not disturb me emotionally?',
+  'Does the sector support the stock, or is the stock moving against weak sector conditions?',
+  'Have I checked whether an earnings result, event, or news item is approaching?'
+];
+
+const mistakesToAvoid = [
+  'Buying a stock only because it is already running fast without checking structure.',
+  'Averaging down emotionally instead of exiting a broken trade setup.',
+  'Taking oversized quantity after one or two winning trades.',
+  'Ignoring volume and entering weak breakouts that have little participation.',
+  'Confusing investing logic with intraday execution and mixing timeframes.',
+  'Moving stop-loss farther away just to avoid accepting a small planned loss.'
 ];
 
 function Learn() {
   return (
     <div className="page-stack">
-      <section className="page-hero learn-hero">
-        <div>
-          <span className="section-label">Market Learning Hub</span>
-          <h2 className="page-heading">Learn how traders study stocks before they place capital at risk</h2>
+      <section className="page-hero learn-hero academy-hero">
+        <div className="academy-hero-copy">
+          <span className="section-label">Trade Academy</span>
+          <h2 className="page-heading">Build market understanding before you build positions</h2>
           <p className="page-subtitle">
-            Use this section to understand stock selection, trend reading, risk control, and the
-            core ideas that shape better trading decisions in the real market.
+            This section focuses on real stock-market learning: how traders study price, volume,
+            company quality, risk, and timing before placing capital at risk in the market.
           </p>
         </div>
-        <div className="learn-highlight">
-          <strong>Core Mindset</strong>
-          <p>A disciplined trader protects capital first, waits for quality setups, and treats patience as an advantage.</p>
+        <div className="learn-highlight academy-highlight">
+          <strong>Best Beginner Habit</strong>
+          <p>Wait for clarity, size modestly, and treat risk control as your first job in every trade.</p>
         </div>
       </section>
 
-      <section className="learn-grid">
+      <section className="learn-grid learn-grid-strong">
         {learningTracks.map((step) => (
-          <article className="panel-card learn-card" key={step.title}>
+          <article className="panel-card learn-card learn-card-strong" key={step.title}>
             <span className="section-label">Trading Framework</span>
             <h3>{step.title}</h3>
             <p className="page-subtitle">{step.body}</p>
@@ -76,17 +101,17 @@ function Learn() {
       </section>
 
       <section className="content-grid two-col">
-        <article className="panel-card">
+        <article className="panel-card learn-panel">
           <div className="panel-head">
             <div>
-              <span className="section-label">What To Check In A Stock</span>
-              <h3>Important selection factors</h3>
+              <span className="section-label">Stock Selection</span>
+              <h3>What to check before picking a stock</h3>
             </div>
           </div>
 
-          <div className="learn-term-list">
+          <div className="learn-term-list learn-dense-list">
             {factorCards.map(([label, description]) => (
-              <div className="comparison-row learn-term-row" key={label}>
+              <div className="comparison-row learn-term-row learn-term-row-strong" key={label}>
                 <strong>{label}</strong>
                 <span>{description}</span>
               </div>
@@ -94,17 +119,17 @@ function Learn() {
           </div>
         </article>
 
-        <article className="panel-card">
+        <article className="panel-card learn-panel">
           <div className="panel-head">
             <div>
-              <span className="section-label">Essential Terms</span>
-              <h3>Words every beginner should know</h3>
+              <span className="section-label">Trading Styles</span>
+              <h3>Different ways traders approach the market</h3>
             </div>
           </div>
 
-          <div className="learn-term-list">
-            {tradingTerms.map(([label, description]) => (
-              <div className="comparison-row learn-term-row" key={label}>
+          <div className="learn-term-list learn-dense-list">
+            {tradingStyles.map(([label, description]) => (
+              <div className="comparison-row learn-term-row learn-term-row-strong" key={label}>
                 <strong>{label}</strong>
                 <span>{description}</span>
               </div>
@@ -113,17 +138,55 @@ function Learn() {
         </article>
       </section>
 
-      <section className="panel-card">
+      <section className="content-grid two-col">
+        <article className="panel-card learn-panel">
+          <div className="panel-head">
+            <div>
+              <span className="section-label">Trading Vocabulary</span>
+              <h3>Important market terms every beginner should know</h3>
+            </div>
+          </div>
+
+          <div className="learn-term-list learn-dense-list">
+            {tradingTerms.map(([label, description]) => (
+              <div className="comparison-row learn-term-row learn-term-row-strong" key={label}>
+                <strong>{label}</strong>
+                <span>{description}</span>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="panel-card learn-panel">
+          <div className="panel-head">
+            <div>
+              <span className="section-label">Mistakes To Avoid</span>
+              <h3>Behavior that usually hurts new traders</h3>
+            </div>
+          </div>
+
+          <div className="learn-checklist">
+            {mistakesToAvoid.map((item) => (
+              <div className="learn-check-item learn-check-item-strong" key={item}>
+                <span className="learn-check-badge">Avoid</span>
+                <p>{item}</p>
+              </div>
+            ))}
+          </div>
+        </article>
+      </section>
+
+      <section className="panel-card learn-panel">
         <div className="panel-head">
           <div>
-            <span className="section-label">Beginner Checklist</span>
-            <h3>Questions to ask before entering a trade</h3>
+            <span className="section-label">Pre-Trade Checklist</span>
+            <h3>Questions to ask yourself before entering a trade</h3>
           </div>
         </div>
 
-        <div className="learn-checklist">
-          {checklist.map((item) => (
-            <div className="learn-check-item" key={item}>
+        <div className="learn-checklist learn-checklist-wide">
+          {beginnerChecklist.map((item) => (
+            <div className="learn-check-item learn-check-item-strong" key={item}>
               <span className="learn-check-badge">Check</span>
               <p>{item}</p>
             </div>

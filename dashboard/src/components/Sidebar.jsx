@@ -10,7 +10,7 @@ const navItems = [
   { label: 'Orders', path: '/orders', icon: 'OR' },
   { label: 'Funds', path: '/funds', icon: 'IN' },
   { label: 'Summary', path: '/summary', icon: 'SM' },
-  { label: 'Learn', path: '/learn', icon: 'ED' }
+  { label: 'Trade Academy', path: '/learn', icon: 'ED' }
 ];
 
 function Sidebar({ open, onClose }) {
