@@ -43,12 +43,15 @@ function Topbar({ onMenuClick }) {
     const timeout = window.setTimeout(async () => {
       try {
         setLoading(true);
-        const { data } = await api.get(`/stocks/search?q=${encodeURIComponent(deferredQuery)}`, {
+        const { data } = await api.get('/stocks/search', {
+          params: { q: String(deferredQuery).trim() },
           signal: controller.signal
         });
-        setResults(data.stocks);
+        setResults(Array.isArray(data.stocks) ? data.stocks : []);
       } catch (error) {
-        setResults([]);
+        if (error.name !== 'CanceledError' && error.code !== 'ERR_CANCELED') {
+          setResults([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -114,6 +117,7 @@ function Topbar({ onMenuClick }) {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search stocks, indices, and symbols..."
+              autoComplete="off"
             />
           </div>
 

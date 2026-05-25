@@ -230,7 +230,13 @@ const enrichStocksWithLiveQuotes = async (stocks, { allowSearch } = {}) => {
   const resolvedStocks = await mapWithConcurrency(
     stocks,
     shouldSearch ? SEARCH_CONCURRENCY : stocks.length,
-    (stock) => resolveStockInput(stock, { allowSearch: shouldSearch })
+    async (stock) => {
+      try {
+        return await resolveStockInput(stock, { allowSearch: shouldSearch });
+      } catch (error) {
+        return cloneStock(stock);
+      }
+    }
   );
   const instrumentKeys = [...new Set(resolvedStocks.map((stock) => stock?.instrumentKey).filter(Boolean))];
 
@@ -279,8 +285,11 @@ const searchStocks = async (query) => {
     : [];
 
   const combined = dedupeStocks([...localMatches.map(cloneStock), ...externalMatches]).slice(0, 24);
-
-  return enrichStocksWithLiveQuotes(combined, { allowSearch: true });
+  try {
+    return await enrichStocksWithLiveQuotes(combined, { allowSearch: true });
+  } catch (error) {
+    return combined;
+  }
 };
 
 const getLivePerformanceForStock = async (stock) => {
