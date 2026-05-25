@@ -12,7 +12,7 @@ const rangeConfig = {
   '1D': { kind: 'intraday', unit: 'minutes', interval: '10' },
   '1W': { kind: 'historical', unit: 'days', interval: '1', lookbackDays: 7 },
   '1M': { kind: 'historical', unit: 'days', interval: '1', lookbackDays: 30 },
-  '6M': { kind: 'historical', unit: 'weeks', interval: '1', lookbackDays: 180 }
+  '1Y': { kind: 'historical', unit: 'weeks', interval: '1', lookbackDays: 365 }
 };
 const SESSION_START_MINUTES = 9 * 60 + 15;
 const SESSION_END_MINUTES = 15 * 60 + 25;
@@ -370,7 +370,7 @@ const formatCandleLabel = (timestamp, rangeKey) => {
     }).format(date);
   }
 
-  if (rangeKey === '6M') {
+  if (rangeKey === '1Y') {
     return new Intl.DateTimeFormat('en-IN', {
       timeZone: 'Asia/Kolkata',
       month: 'short',
@@ -385,19 +385,39 @@ const formatCandleLabel = (timestamp, rangeKey) => {
   }).format(date);
 };
 
+const toFiniteNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 const buildSeriesFromCandles = (rawCandles, rangeKey) => {
   const sessionSlots = rangeKey === '1D' ? buildIntradaySessionSlots() : null;
   const candles = [...rawCandles]
-    .map((item) => ({
-      label: formatCandleLabel(item[0], rangeKey),
-      time: item[0],
-      open: Number(item[1] || 0),
-      high: Number(item[2] || 0),
-      low: Number(item[3] || 0),
-      close: Number(item[4] || 0),
-      volume: Number(item[5] || 0),
-      slotIndex: rangeKey === '1D' ? getIntradaySlotIndex(item[0]) : null
-    }))
+    .map((item) => {
+      const timestamp = item?.[0];
+      const timeValue = new Date(timestamp).getTime();
+      const open = toFiniteNumber(item?.[1]);
+      const high = toFiniteNumber(item?.[2]);
+      const low = toFiniteNumber(item?.[3]);
+      const close = toFiniteNumber(item?.[4]);
+      const volume = toFiniteNumber(item?.[5]) ?? 0;
+
+      if (!Number.isFinite(timeValue) || open === null || high === null || low === null || close === null) {
+        return null;
+      }
+
+      return {
+        label: formatCandleLabel(timestamp, rangeKey),
+        time: timestamp,
+        open,
+        high,
+        low,
+        close,
+        volume,
+        slotIndex: rangeKey === '1D' ? getIntradaySlotIndex(timestamp) : null
+      };
+    })
+    .filter(Boolean)
     .sort((left, right) => new Date(left.time).getTime() - new Date(right.time).getTime());
 
   if (candles.length === 0) {

@@ -31,7 +31,7 @@ function Holdings() {
 
     const timer = window.setInterval(() => {
       fetchHoldings(false);
-    }, 500);
+    }, 12000);
 
     return () => {
       window.clearInterval(timer);

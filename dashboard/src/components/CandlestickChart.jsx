@@ -10,6 +10,7 @@ function CandlestickChart({
   className = '',
 }) {
   const [hovered, setHovered] = useState(null);
+  const safeSessionSlots = Array.isArray(sessionSlots) ? sessionSlots : [];
 
   const padding = {
     top: 24,
@@ -19,18 +20,34 @@ function CandlestickChart({
   };
 
   const chart = useMemo(() => {
-    if (!candles.length) return null;
+    const normalizedCandles = candles.filter(
+      (candle) =>
+        candle &&
+        Number.isFinite(Number(candle.open)) &&
+        Number.isFinite(Number(candle.high)) &&
+        Number.isFinite(Number(candle.low)) &&
+        Number.isFinite(Number(candle.close))
+    ).map((candle) => ({
+      ...candle,
+      open: Number(candle.open),
+      high: Number(candle.high),
+      low: Number(candle.low),
+      close: Number(candle.close),
+      volume: Number(candle.volume || 0),
+    }));
 
-    const priceHigh = Math.max(...candles.map((c) => c.high));
-    const priceLow = Math.min(...candles.map((c) => c.low));
+    if (!normalizedCandles.length) return null;
+
+    const priceHigh = Math.max(...normalizedCandles.map((c) => c.high));
+    const priceLow = Math.min(...normalizedCandles.map((c) => c.low));
     const priceRange = Math.max(priceHigh - priceLow, 1);
-    const maxVolume = Math.max(...candles.map((c) => Number(c.volume || 0)), 1);
+    const maxVolume = Math.max(...normalizedCandles.map((c) => Number(c.volume || 0)), 1);
     const chartWidth = width - padding.left - padding.right;
     const priceHeight = height - padding.top - padding.bottom - 76;
     const volumeTop = padding.top + priceHeight + 24;
     const volumeHeight = 52;
-    const axisSlots = sessionSlots.length ? sessionSlots : candles.map((candle) => candle.label);
-    const totalSlots = Math.max(axisSlots.length, candles.length);
+    const axisSlots = safeSessionSlots.length ? safeSessionSlots : normalizedCandles.map((candle) => candle.label);
+    const totalSlots = Math.max(axisSlots.length, normalizedCandles.length, 1);
     const slotWidth = chartWidth / totalSlots;
     const bodyWidth = Math.max(4, Math.min(12, slotWidth * 0.58));
     const toY = (value) => padding.top + ((priceHigh - value) / priceRange) * priceHeight;
@@ -62,8 +79,9 @@ function CandlestickChart({
       labelIndexes,
       priceLevels,
       axisSlots,
+      normalizedCandles,
     };
-  }, [candles, sessionSlots, width, height]);
+  }, [candles, safeSessionSlots, width, height]);
 
   if (!candles.length || !chart) {
     return (
@@ -116,7 +134,7 @@ function CandlestickChart({
           strokeWidth="1"
         />
 
-        {candles.map((candle, index) => {
+        {chart.normalizedCandles.map((candle, index) => {
           const slotIndex = Number.isInteger(candle.slotIndex) ? candle.slotIndex : index;
           const x = padding.left + chart.slotWidth * slotIndex + chart.slotWidth / 2;
           const openY = chart.toY(candle.open);

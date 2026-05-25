@@ -7,13 +7,6 @@ const indices = [
   { label: 'NIFTY IT', value: '36,992.25', change: '+1.10%' }
 ];
 
-const watchlistRows = [
-  { symbol: 'RELIANCE', price: '2,962.80', change: '+1.09%', volume: '3.2M' },
-  { symbol: 'INFY', price: '1,510.00', change: '+1.23%', volume: '2.1M' },
-  { symbol: 'HDFCBANK', price: '1,590.00', change: '-0.55%', volume: '4.7M' },
-  { symbol: 'TATAMOTORS', price: '1,012.15', change: '+1.76%', volume: '5.4M' }
-];
-
 const trustItems = [
   ['Secure sessions', 'JWT-based protected dashboard routes'],
   ['Order audit trail', 'Executed, pending, and closed trade history'],
@@ -42,47 +35,32 @@ function Home() {
             </div>
           </div>
 
-          <div className="terminal-preview" aria-label="Trading dashboard preview">
-            <div className="preview-topbar">
-              <strong>Market Snapshot</strong>
-              <span>Indian equity workspace</span>
+          <div className="hero-showcase" aria-label="Trading workspace highlights">
+            <div className="hero-showcase-card hero-showcase-primary">
+              <span className="eyebrow">Built For Practice</span>
+              <h3>Learn market structure, build conviction, and execute with clarity.</h3>
+              <p>
+                Watchlists, positions, holdings, charts, and funds come together in one beginner-friendly workflow.
+              </p>
             </div>
-            <div className="preview-kpis">
-              <div>
-                <span>Portfolio</span>
-                <strong>&#8377;6.42L</strong>
+
+            <div className="hero-showcase-grid">
+              <div className="hero-showcase-card">
+                <span>Watchlists</span>
+                <strong>Sector-led scanning</strong>
+                <p>Track leaders, laggards, and the names you want to study daily.</p>
               </div>
-              <div>
-                <span>Today P&L</span>
-                <strong className="text-success">+&#8377;8,420</strong>
+              <div className="hero-showcase-card">
+                <span>Execution</span>
+                <strong>Simple order flow</strong>
+                <p>Place CNC, MIS, and NRML trades with focused order tickets.</p>
               </div>
-              <div>
-                <span>Funds</span>
-                <strong>&#8377;1.00L</strong>
+              <div className="hero-showcase-card">
+                <span>Risk View</span>
+                <strong>Clear portfolio state</strong>
+                <p>See holdings, open positions, and funds without hunting through tabs.</p>
               </div>
             </div>
-            <div className="preview-chart">
-              <span className="preview-bar-44" />
-              <span className="preview-bar-68" />
-              <span className="preview-bar-52" />
-              <span className="preview-bar-76" />
-              <span className="preview-bar-61" />
-              <span className="preview-bar-84" />
-              <span className="preview-bar-58" />
-              <span className="preview-bar-72" />
-            </div>
-            <table className="preview-table">
-              <tbody>
-                {watchlistRows.map((row) => (
-                  <tr key={row.symbol}>
-                    <td>{row.symbol}</td>
-                    <td>{row.price}</td>
-                    <td className={row.change.startsWith('-') ? 'text-danger' : 'text-success'}>{row.change}</td>
-                    <td>{row.volume}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       </section>

@@ -40,7 +40,7 @@ function BuyModal({ open, stock, mode: initialMode = 'buy', onClose, onSuccess, 
     };
 
     fetchQuote();
-    const timer = window.setInterval(fetchQuote, 500);
+    const timer = window.setInterval(fetchQuote, 8000);
 
     return () => {
       window.clearInterval(timer);
@@ -86,7 +86,7 @@ function BuyModal({ open, stock, mode: initialMode = 'buy', onClose, onSuccess, 
         <div className="modal-header">
           <div>
             <span className="section-label">Execution Ticket</span>
-            <h2>{stock.symbol} <span className="text-muted">{`· ${stock.exchange}`}</span></h2>
+            <h2>{stock.symbol} <span className="text-muted">{`- ${stock.exchange}`}</span></h2>
           </div>
         </div>
 

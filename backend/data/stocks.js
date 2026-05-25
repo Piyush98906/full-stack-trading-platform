@@ -104,7 +104,7 @@ const rangeDefinitions = {
   '1D': { points: 38, amplitude: 0.009 },
   '1W': { points: 5, amplitude: 0.028, labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] },
   '1M': { points: 6, amplitude: 0.052, labels: ['W1', 'W2', 'W3', 'W4', 'W5', 'Now'] },
-  '6M': { points: 6, amplitude: 0.135, labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Now'] }
+  '1Y': { points: 12, amplitude: 0.18, labels: ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'Now'] }
 };
 
 const SESSION_START_MINUTES = 9 * 60 + 15;
@@ -246,7 +246,7 @@ const buildCompanyProfile = (stock) => {
 
 const buildStockDetailsFromStock = (stock) => {
   const performance = buildPerformance(stock);
-  const yearTrack = performance['6M'].points.concat(
+  const yearTrack = performance['1Y'].points.concat(
     performance['1M'].points.map((point, index) => ({
       label: `Ext ${index + 1}`,
       price: Number((point.price * (0.96 + index * 0.008)).toFixed(2))

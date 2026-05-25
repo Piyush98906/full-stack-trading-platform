@@ -7,7 +7,7 @@ import CandlestickChart from './CandlestickChart';
 import EmptyState from './EmptyState';
 import LoadingSpinner from './LoadingSpinner';
 
-const ranges = ['1D', '1W', '1M', '6M'];
+const ranges = ['1D', '1W', '1M', '1Y'];
 
 function StockDetailModal() {
   const { selectedStock, closeStockDetail } = useStockDetail();
@@ -81,7 +81,7 @@ function StockDetailModal() {
 
     const timer = window.setInterval(() => {
       fetchDetails(selectedStock, false);
-    }, 500);
+    }, 12000);
 
     return () => {
       window.clearInterval(timer);
@@ -108,7 +108,7 @@ function StockDetailModal() {
               <span className="section-label">Stock Snapshot</span>
               <h2>
                 {selectedStock.symbol}
-                {details?.stock ? <span className="text-muted">{` · ${details.stock.exchange}`}</span> : null}
+                {details?.stock ? <span className="text-muted">{` - ${details.stock.exchange}`}</span> : null}
               </h2>
               {details?.company ? <p className="stock-subtitle">{details.company.companyName}</p> : null}
             </div>

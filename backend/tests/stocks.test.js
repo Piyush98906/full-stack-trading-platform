@@ -23,7 +23,7 @@ test('buildStockDetails returns performance, stats, company profile, and financi
   assert.equal(details.stock.symbol, 'TCS');
   assert.ok(details.performance['1D']);
   assert.ok(details.performance['1M']);
-  assert.ok(details.performance['6M']);
+  assert.ok(details.performance['1Y']);
   assert.ok(details.stats.week52High >= details.stats.week52Low);
   assert.ok(details.stats.upperCircuit > details.stats.lowerCircuit);
   assert.equal(details.company.companyName, 'Tata Consultancy Services');

@@ -18,7 +18,7 @@ router.get('/search', protect, async (req, res) => {
     const query = String(req.query.q || '').trim().toLowerCase();
 
     if (!query) {
-      return res.json({ stocks: await enrichStocksWithLiveQuotes(STOCKS.slice(0, 12), { allowSearch: true }) });
+      return res.json({ stocks: await enrichStocksWithLiveQuotes(STOCKS.slice(0, 24), { allowSearch: true }) });
     }
 
     return res.json({ stocks: await searchStocks(query) });
@@ -33,7 +33,7 @@ router.get('/provider-status', protect, (req, res) => {
 
 router.get('/market-overview', protect, async (req, res) => {
   try {
-    const liveStocks = await enrichStocksWithLiveQuotes(STOCKS, { allowSearch: true });
+    const liveStocks = await enrichStocksWithLiveQuotes(STOCKS, { allowSearch: false });
     const equities = liveStocks.filter((stock) => stock.sector !== 'Index');
     const rankedByGain = [...equities].sort((a, b) => b.change - a.change);
     const rankedByLoss = [...equities].sort((a, b) => a.change - b.change);

@@ -33,7 +33,7 @@ function Orders() {
 
     const timer = window.setInterval(() => {
       fetchOrders(false);
-    }, 500);
+    }, 12000);
 
     return () => {
       window.clearInterval(timer);

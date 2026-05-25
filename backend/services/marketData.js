@@ -10,7 +10,7 @@ const {
 } = require('./upstoxData');
 
 const warningCache = new Set();
-const chartRanges = ['1D', '1W', '1M', '6M'];
+const chartRanges = ['1D', '1W', '1M', '1Y'];
 const SEARCH_CONCURRENCY = 6;
 
 const warnOnce = (key, message) => {
@@ -275,10 +275,10 @@ const searchStocks = async (query) => {
   );
 
   const externalMatches = isUpstoxReady()
-    ? await searchUpstoxInstruments(query, { records: 12 })
+    ? await searchUpstoxInstruments(query, { records: 36 })
     : [];
 
-  const combined = dedupeStocks([...localMatches.map(cloneStock), ...externalMatches]).slice(0, 12);
+  const combined = dedupeStocks([...localMatches.map(cloneStock), ...externalMatches]).slice(0, 24);
 
   return enrichStocksWithLiveQuotes(combined, { allowSearch: true });
 };

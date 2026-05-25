@@ -54,7 +54,7 @@ function Login() {
             </div>
             <div className="trust-card">
               <strong>Market-first UI</strong>
-              <span>Live search, order tickets, holdings, funds, and sector views.</span>
+              <span>Watchlists, charts, order tickets, holdings, funds, and clean portfolio views.</span>
             </div>
             <div className="trust-card">
               <strong>Built for NSE & BSE</strong>
