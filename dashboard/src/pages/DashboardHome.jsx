@@ -116,13 +116,6 @@ function DashboardHome() {
 
   return (
     <div className="page-stack">
-      <section className="page-hero">
-        <div>
-          <h2 className="page-heading">Good morning, {user?.name}</h2>
-          <p className="page-subtitle">{formatDashboardDate()}</p>
-        </div>
-      </section>
-
       <section className="kpi-grid">
         <KPICard
           title="Total Portfolio Value"
