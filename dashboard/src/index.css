@@ -901,6 +901,40 @@ input::placeholder {
   min-height: 96px;
 }
 
+.summary-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.85fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.summary-side-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.chart-panel {
+  overflow: hidden;
+}
+
+.summary-chart-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.summary-chart-wrap-compact {
+  height: 260px;
+}
+
+.summary-chart-wrap-donut {
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.summary-chart-wrap-wide {
+  height: 300px;
+}
+
 .form-card,
 .modal-form,
 .field-block,
@@ -1656,6 +1690,10 @@ input::placeholder {
     grid-template-columns: 1fr;
   }
 
+  .summary-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
   .learn-checklist-wide {
     grid-template-columns: 1fr;
   }
@@ -1782,6 +1820,14 @@ input::placeholder {
   .avatar-pill-button {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .summary-chart-wrap-compact {
+    height: 220px;
+  }
+
+  .summary-chart-wrap-wide {
+    height: 240px;
   }
 
   .learn-check-item,

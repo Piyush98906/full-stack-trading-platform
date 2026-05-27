@@ -96,27 +96,30 @@ function Summary() {
               <h3>P&amp;L per holding</h3>
             </div>
           </div>
-          <Bar
-            data={{
-              labels: chartPayload.pnlRows.map((item) => item.name),
-              datasets: [
-                {
-                  data: chartPayload.pnlRows.map((item) => item.pnl),
-                  backgroundColor: chartPayload.pnlRows.map((item) =>
-                    item.pnl >= 0 ? '#16A34A' : '#DC2626'
-                  ),
-                  borderRadius: 8
+          <div className="summary-chart-wrap summary-chart-wrap-compact">
+            <Bar
+              data={{
+                labels: chartPayload.pnlRows.map((item) => item.name),
+                datasets: [
+                  {
+                    data: chartPayload.pnlRows.map((item) => item.pnl),
+                    backgroundColor: chartPayload.pnlRows.map((item) =>
+                      item.pnl >= 0 ? '#16A34A' : '#DC2626'
+                    ),
+                    borderRadius: 8
+                  }
+                ]
+              }}
+              options={{
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: { grid: { display: false } },
+                  y: { grid: { color: 'rgba(0,0,0,0.05)' } }
                 }
-              ]
-            }}
-            options={{
-              plugins: { legend: { display: false } },
-              scales: {
-                x: { grid: { display: false } },
-                y: { grid: { color: 'rgba(0,0,0,0.05)' } }
-              }
-            }}
-          />
+              }}
+            />
+          </div>
         </article>
 
         <article className="panel-card chart-panel">
@@ -126,98 +129,106 @@ function Summary() {
               <h3>Current value split</h3>
             </div>
           </div>
-          <Doughnut
-            data={{
-              labels: Object.keys(chartPayload.sectorMap),
-              datasets: [
-                {
-                  data: Object.values(chartPayload.sectorMap),
-                  backgroundColor: ['#4F46E5', '#0EA5E9', '#16A34A', '#F97316', '#E11D48', '#14B8A6'],
-                  borderWidth: 0
+          <div className="summary-chart-wrap summary-chart-wrap-compact summary-chart-wrap-donut">
+            <Doughnut
+              data={{
+                labels: Object.keys(chartPayload.sectorMap),
+                datasets: [
+                  {
+                    data: Object.values(chartPayload.sectorMap),
+                    backgroundColor: ['#4F46E5', '#0EA5E9', '#16A34A', '#F97316', '#E11D48', '#14B8A6'],
+                    borderWidth: 0
+                  }
+                ]
+              }}
+              options={{
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                cutout: '68%'
+              }}
+            />
+          </div>
+        </article>
+      </section>
+
+      <section className="summary-bottom-grid">
+        <article className="panel-card chart-panel">
+          <div className="panel-head">
+            <div>
+              <span className="section-label">Trend</span>
+              <h3>Portfolio value over 30 days</h3>
+            </div>
+            <strong>{formatINR(chartPayload.trendPoints[chartPayload.trendPoints.length - 1] || 0)}</strong>
+          </div>
+
+          <div className="summary-chart-wrap summary-chart-wrap-wide">
+            <Line
+              data={{
+                labels: Array.from({ length: 30 }, (_, index) => `Day ${index + 1}`),
+                datasets: [
+                  {
+                    data: chartPayload.trendPoints,
+                    label: 'Portfolio Value',
+                    fill: true,
+                    borderColor: '#4F46E5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.12)',
+                    tension: 0.35
+                  }
+                ]
+              }}
+              options={{
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: { grid: { display: false } },
+                  y: { grid: { color: 'rgba(0,0,0,0.05)' } }
                 }
-              ]
-            }}
-            options={{
-              plugins: { legend: { position: 'bottom' } },
-              cutout: '68%'
-            }}
-          />
-        </article>
-      </section>
-
-      <section className="content-grid two-col">
-        <article className="panel-card">
-          <div className="panel-head">
-            <div>
-              <span className="section-label">Leaders</span>
-              <h3>Top Gainers</h3>
-            </div>
+              }}
+            />
           </div>
-          {gainers.map((item) => (
-            <div className="mini-row" key={item.name}>
+        </article>
+
+        <div className="summary-side-stack">
+          <article className="panel-card">
+            <div className="panel-head">
               <div>
-                <button className="stock-link-button" onClick={() => openStockDetail(item.name)} type="button">
-                  {item.name}
-                </button>
-                <small>{item.sector}</small>
+                <span className="section-label">Leaders</span>
+                <h3>Top Gainers</h3>
               </div>
-              <span className="pill-badge badge-executed">{item.dayPercent.toFixed(2)}%</span>
             </div>
-          ))}
-        </article>
+            {gainers.map((item) => (
+              <div className="mini-row" key={item.name}>
+                <div>
+                  <button className="stock-link-button" onClick={() => openStockDetail(item.name)} type="button">
+                    {item.name}
+                  </button>
+                  <small>{item.sector}</small>
+                </div>
+                <span className="pill-badge badge-executed">{item.dayPercent.toFixed(2)}%</span>
+              </div>
+            ))}
+          </article>
 
-        <article className="panel-card">
-          <div className="panel-head">
-            <div>
-              <span className="section-label">Pressure</span>
-              <h3>Top Losers</h3>
-            </div>
-          </div>
-          {losers.map((item) => (
-            <div className="mini-row" key={item.name}>
+          <article className="panel-card">
+            <div className="panel-head">
               <div>
-                <button className="stock-link-button" onClick={() => openStockDetail(item.name)} type="button">
-                  {item.name}
-                </button>
-                <small>{item.sector}</small>
+                <span className="section-label">Pressure</span>
+                <h3>Top Losers</h3>
               </div>
-              <span className="pill-badge badge-cancelled">{item.dayPercent.toFixed(2)}%</span>
             </div>
-          ))}
-        </article>
-      </section>
-
-      <section className="panel-card chart-panel">
-        <div className="panel-head">
-          <div>
-            <span className="section-label">Trend</span>
-            <h3>Portfolio value over 30 days</h3>
-          </div>
-          <strong>{formatINR(chartPayload.trendPoints[chartPayload.trendPoints.length - 1] || 0)}</strong>
+            {losers.map((item) => (
+              <div className="mini-row" key={item.name}>
+                <div>
+                  <button className="stock-link-button" onClick={() => openStockDetail(item.name)} type="button">
+                    {item.name}
+                  </button>
+                  <small>{item.sector}</small>
+                </div>
+                <span className="pill-badge badge-cancelled">{item.dayPercent.toFixed(2)}%</span>
+              </div>
+            ))}
+          </article>
         </div>
-
-        <Line
-          data={{
-            labels: Array.from({ length: 30 }, (_, index) => `Day ${index + 1}`),
-            datasets: [
-              {
-                data: chartPayload.trendPoints,
-                label: 'Portfolio Value',
-                fill: true,
-                borderColor: '#4F46E5',
-                backgroundColor: 'rgba(79, 70, 229, 0.12)',
-                tension: 0.35
-              }
-            ]
-          }}
-          options={{
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { display: false } },
-              y: { grid: { color: 'rgba(0,0,0,0.05)' } }
-            }
-          }}
-        />
       </section>
     </div>
   );
